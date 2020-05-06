@@ -1,0 +1,90 @@
+digraph finite_state_machine {
+    rankdir=LR;
+    size="100"
+
+    node [shape = circle, label="q0", fontsize=12] q0;
+    node [shape = doublecircle, label="q1", fontsize=12] q1;
+
+    node [shape = circle, label="q2", fontsize=12] q2;
+    node [shape = circle, label="q3", fontsize=12] q3;
+    node [shape = circle, label="q4", fontsize=12] q4;
+    node [shape = circle, label="q5", fontsize=12] q5;
+    node [shape = circle, label="q6", fontsize=12] q6;
+    node [shape = circle, label="q7", fontsize=12] q7;
+    node [shape = circle, label="q8", fontsize=12] q8;
+    node [shape = circle, label="q9", fontsize=12] q9;
+    node [shape = circle, label="q10", fontsize=12] q10;
+    node [shape = circle, label="q11", fontsize=12] q11;
+    node [shape = circle, label="q12", fontsize=12] q12;
+    node [shape = circle, label="q13", fontsize=12] q13;
+    node [shape = circle, label="q14", fontsize=12] q14;
+    node [shape = circle, label="q15", fontsize=12] q15;
+
+    node [shape = point ]; qi
+    qi -> q0;
+
+    // Transações do Estado [q0]
+    q0 -> q0 [label = "branco"];
+    q0 -> q1 [label = "(  )  ,  +  *  ="]
+    q0 -> q2 [label = "/"]
+    q0 -> q5 [label = "<"]
+    q0 -> q6 [label = ">"]
+    q0 -> q7 [label = "!"]
+    q0 -> q11 [label = "[1-9] -"]
+    q0 -> q9 [label = "0"]
+    q0 -> q8 [label = "[a-z] [0-9] _"]
+    q0 -> q13 [label = "\""]
+    q0 -> q14 [label = "&"]
+    q0 -> q15 [label = "|"]
+
+    // Transações do Estado [q2]
+    q2 -> q1 [label = "dif(*)"]
+    q2 -> q3 [label = "*"]
+
+    // Transações do Estado [q3]
+    q3 -> q3 [label = "dif(*,EOF)"]
+    q3 -> q4 [label = "*"]
+
+    // Transações do Estado [q4]
+    q4 -> q3 [label = "dif(/,EOF)"]
+    q4 -> q0 [label = "/"]    
+
+    // Transações do Estado [q5]
+    q5 -> q1 [label = "-,=,dif(-,=)"]
+
+    // Transações do Estado [q6]
+    q6 -> q1 [label = "=,dif(=)"]
+
+    // Transações do Estado [q7]
+    q7 -> q1 [label = "=,dif(=)"]
+
+    // Transações do Estado [q8]
+    q8 -> q1 [label = "dif([a-z],[0-9],_)"]
+    q8 -> q8 [label = "[a-z],[0-9],_"]
+
+    // Transações do Estado [q9]
+    q9 -> q11 [label = "[0-9]"]
+    q9 -> q1 [label = "dif([0-9]),x"]
+    q9 -> q10 [label = "x"]
+
+    // Transações do Estado [q10]
+    q10 -> q12 [label = "[a-f],[0-9]"]
+
+    // Transações do Estado [q11]
+    q11 -> q1 [label = "dif[0-9]"]
+    q11 -> q11 [label = "[0-9]"]
+
+    // Transações do Estado [q12]
+    q12 -> q11 [label = "[a-f],[0-9]"]
+
+    // Transações do Estado [q13]
+    q13 -> q1 [label = "\""]
+    q13 -> q13 [label = "dif(\",\\n)"]
+    
+     // Transações do Estado [q14]
+    q14 -> q1 [label = "&"]
+
+     // Transações do Estado [q15]
+    q15 -> q1 [label = "|"]
+
+}

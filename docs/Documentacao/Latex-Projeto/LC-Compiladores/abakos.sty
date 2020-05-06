@@ -1,0 +1,212 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%% Template de Artigo Adaptado para Trabalho de Diplomação do ICEI %%%%%%%%%%%%%%%%%%%%%%%%
+%% codificação UTF-8 - Abntex - Latex -  							                                 %%
+%% Autor:    Fábio Leandro Rodrigues Cordeiro  (fabioleandro@pucminas.br)                            %% 
+%% Co-autor: Prof. João Paulo Domingos Silva, Harison da Silva e Anderson Carvalho                   %%
+%% Revisores normas NBR (Padrão PUC Minas): Helenice Rego Cunha e Prof. Theldo Cruz                  %%
+%% Versão: 1.0     13 de março 2014                                                                  %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\NeedsTeXFormat{LaTeX2e}
+
+\input{cvs-id.def}
+\CVSExtract$Id: abakos.sty,v 0.1 2012/29/08 15:08:25 Fabio Cordeiro Exp $
+\CVSPackage{abakos}{} %substitui \ProvidesPackage (replaces \ProvidesPackage)
+
+% Pacotes de codificação das fontes para português
+\usepackage[T1]{fontenc}
+\usepackage{times}
+
+
+
+% \usepackage{memhfixc}  % Para mudança de tamanho de fontes 
+% Merge em duas células (linhas diferentes)
+\usepackage{multirow}
+
+%desenhar cabeçalho e rodapé
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+% Pacote para divisão silábica do portugues
+\usepackage[english, brazilian]{babel}
+\usepackage[titles]{tocloft} %% formatar a lista de figuras e tabelas.
+\usepackage[format=hang,font=bf,justification=centerlast,labelfont=bf,labelsep=endash]{caption}
+%para usar o citador
+%  \usepackage{selinput}
+% 
+%   \SelectInputMappings{     % Semi-automatic input selection
+%     atilde={ã},             % by a list of selected glyphs
+%     aacute={á},             % see: http://partners.adobe.com/public/developer/en/opentype/glyphlist.txt
+%     ccedilla={ç}
+%   }
+% \usepackage{babel}
+% \usepackage{txfonts}      % Font in Times New Roman style
+\usepackage[onehalfspacing]{setspace}
+\usepackage{lipsum}       % Only for dummy text, to be dropped in actual document
+
+
+% Pacote para citação e referências seguindo ABNT no sistema (AUTOR, Data)
+\usepackage[alf,abnt-emphasize=bf,bibjustif,recuo=0cm, abnt-etal-cite=2, abnt-full-initials=yes, abnt-and-type=; , abnt-thesis-year=title]{abntex2cite} % faz ficar negrito i titulo e a o ano da thesi vir depois do titulo
+
+%  \usepackage[alf,abnt-emphasize=bf, abnt-etal-cite=2, abnt-full-initials=yes]{abntex2cite} % faz ficar negrito i titulo e a o ano da thesi vir depois do titulo
+
+\usepackage[alf]{abntex2cite}
+% \usepackage{cite}
+% \usepackage{abnt-alf}
+\usepackage{setspace}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+
+\citeoption{abnt-full-initials=yes}
+
+
+\usepackage[linesnumbered, ruled, vlined]{algorithm2e}
+\usepackage{algorithmic} %algorithm
+\usepackage{listings}
+
+\usepackage{leading}   %espaçamento variavel
+\newcommand{\esp}{\hspace{-0.3cm}} % espaço entre Numero e Título da seção
+
+% Alterar o espaçamento da margem no algoritmo
+\setlength{\algomargin}{1em}
+
+% Margens 
+% \usepackage[inner=30mm,outer=20mm,top=30mm,bottom=20mm]{geometry}
+ \usepackage{geometry}
+ \geometry{tmargin=20mm,bmargin=20mm,lmargin=30mm,rmargin=20mm}
+ 
+ % -- Legenda das Figuras --
+\usepackage{caption}
+\captionsetup[figure]{labelsep=endash,labelfont={bf},textfont=bf} 
+\captionsetup[table]{labelsep=endash,labelfont={bf},textfont=bf}
+ 
+
+%%%%%%Utilizar simbolos como nota de rodapé [* 
+ \long\def\symbolfootnote[#1]#2{\begingroup%
+ \def\thefootnote{\fnsymbol{footnote}}\footnote[#1]{#2}\endgroup}
+
+%%%%%%%%%% Identação de nota de rodapé %%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[stable]{footmisc}
+\renewcommand{\footnotemargin}{0pt} %identação da nota de rodapé 
+\renewcommand{\footnotelayout}{\hspace{0px}}% Espaço entre simbolo do rodapé e layout texto 
+
+
+%%%% traduzir caption de figuras e tabelas %%%%%%%%%%%%%%%%%
+
+\addto\captionsbrazilian{
+% \renewcommand{\figurename}{Figura}
+ \renewcommand{\tablename}{Tabela}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % % Citação direta 
+\newenvironment{citacaodireta}{%
+  \begin{list}{}{%
+    \small
+    \setlength{\leftmargin}{4cm}
+    \singlespacing
+  }
+  \item\relax
+}{\end{list}}
+
+% \begin{document}
+%   \lipsum[1]
+% 
+%   \begin{novoambiente}
+%     \lipsum[2]
+%   \end{novoambiente}
+% 
+%   \lipsum[3]
+% \end{document}
+% --- Titulo de secao ---
+
+\newcommand{\secao}[1]{\section{#1}}
+\renewcommand{\section}{\@startsection
+{section} %Nome
+{0} %Nivel
+{0mm} %Indentacao
+{1.5\baselineskip} % Antes do paragrafo
+{1.5\baselineskip} % Depois do paragrafo
+{\noindent\bfseries\uppercase}} % Estilo - negrito e maiusculo
+
+
+% Titulo de subsecao ---
+
+\newcommand{\subsecao}[1]{\subsection{#1}}
+\renewcommand{\subsection}{\@startsection
+{subsection} %Nome
+{1} %Nivel
+{0mm} %Indentacao
+{1.5\baselineskip} % Antes do paragrafo
+{1.5\baselineskip} % Depois do paragrafo
+{\noindent\bfseries}} % Estilo
+
+% Titulo de subsubsecao ---
+
+\newcommand{\subsubsecao}[1]{\subsubsection{#1}}
+\renewcommand{\subsubsection}{\@startsection
+{subsubsection}% %Nome
+{2} %Nivel
+{0mm} %Indentacao
+{1.5\baselineskip} % Antes do paragrafo
+{1.5\baselineskip} % Depois do paragrafo
+{\noindent\bfseries\itshape}} % Estilo
+
+%%%%%%%%%%%Título de Seção de 4° nível %%%%%%%%%%%%%%%%
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{3}
+\newcounter {subsubsubsection}[subsubsection]
+\renewcommand\thesubsubsubsection{\thesubsubsection .\@arabic\c@subsubsubsection}
+\newcommand\subsubsubsection{\@startsection{subsubsubsection}{4}{\z@}%
+				     {1.5\baselineskip} % Antes do paragrafo
+                                     {0.0\baselineskip}
+                                     {\normalsize\bfseries\underbar}}
+\newcommand*{\subsubsubsectionmark}[1]{\\ \par}
+
+%%%%%%%%%%%Título de Seção de 5° nível %%%%%%%%%%%%%%%%
+
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{4}
+\newcounter {subsubsubsubsection}[subsubsubsection]
+\renewcommand\thesubsubsubsubsection{\thesubsubsubsection .\@arabic\c@subsubsubsubsection}
+\newcommand\subsubsubsubsection{\@startsection{subsubsubsubsection}{5}{\z@}%
+				     {1.5\baselineskip} % Antes do paragrafo
+                                     {0.0\baselineskip}
+                                     {\normalsize}}
+% \newcommand*\l@subsubsubsection{\@dottedtocline{3}{10.0em}{4.1em}}
+\newcommand*{\subsubsubsubsectionmark}[1]{\\ \par}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Comando para citação individual de Autor e Ano
+\newcommand{\citeAutorAno}[1]{\citeauthoronline{#1} (\citeyear{#1})}
+\newcommand{\citeCitacao}[1]{\textsc{\citeauthoronline{#1}}, \citeyear{#1}} % para dentro do parentese ficar maisculo
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Recuo da primeira linha de cada parágrafo
+%  \onehalfspace  % espaçamento 1.5 entre linhas
+%  \setlength{\parindent}{1.25cm}
+
+\usepackage{indentfirst}
+
+%Desenhar figuras geometricas
+\usepackage{tikz}
+
+%  Formata tipo e tamanho da fonte das subseções.
+
+\fancyhf{}
+
+%para margem do cabeçalho ficar do tamanho da margem do texto
+\fancyheadoffset{0cm}
+ 
+\lhead{\footnotesize{\monog}} 
+
+\setlength\parindent{0pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+\rfoot [\footnotesize{\editorial}]{\thepage}
+
+\lfoot [\thepage]{\footnotesize{\editorial}}
+
+
+
