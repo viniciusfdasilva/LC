@@ -1,0 +1,10 @@
+/* Exemplo de Programa na linguagem L */
+
+int n;
+string nome;
+boolean naoTerminou;
+final MAXITER<-10;
+
+/* Programa Principal */
+
+write("Digite seu nome:
