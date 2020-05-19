@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (MiKTeX 2.9.7400 64-bit) (preloaded format=pdflatex 2020.4.21)  6 MAY 2020 08:22
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (MiKTeX 2.9.7400 64-bit) (preloaded format=pdflatex 2020.4.21)  17 MAY 2020 22:02
 entering extended mode
 **./principal.tex
 (principal.tex
@@ -800,7 +800,18 @@ File: pppdftex.def 2020/01/28 v0.5q Pdfpages driver for pdfTeX (AM)
 LaTeX Warning: Unused global option(s):
     [Times].
 
-(principal.aux)
+(principal.aux (alfabeto.aux) (analisadorLexico.aux) (ger.aux
+
+LaTeX Warning: Label `fig:figura1' multiply defined.
+
+) (glc.aux
+
+LaTeX Warning: Label `fig:figura1' multiply defined.
+
+
+LaTeX Warning: Label `fig:figura1' multiply defined.
+
+))
 \openout1 = `principal.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 43.
@@ -819,8 +830,7 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 43.
 LaTeX Font Info:    ... okay on input line 43.
 LaTeX Font Info:    Trying to load font information for T1+ptm on input line 43
 .
-
-("C:\Users\vinic\AppData\Local\Programs\MiKTeX 2.9\tex/latex/psnfss\t1ptm.fd"
+ ("C:\Users\vinic\AppData\Local\Programs\MiKTeX 2.9\tex/latex/psnfss\t1ptm.fd"
 File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
 )
 Package caption Info: Begin \AtBeginDocument code.
@@ -931,9 +941,13 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
 {C:/Users/vinic/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map} <./figuras/b
 rasao.jpg>]
-\openout2 = `textos.aux'.
+\openout2 = `alfabeto.aux'.
 
- (textos.tex
+ (alfabeto.tex
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+)
 
 Package Fancyhdr Warning: \headheight is too small (12.0pt): 
 Make it at least 48.37994pt.
@@ -942,594 +956,52 @@ This may cause the page layout to be inconsistent, however.
 
 [2
 
-]
-! Missing $ inserted.
-<inserted text> 
-                $
-l.57 1 & final & (f\cup
-                        F)(i\cup I)(n\cup N)(a\cup A)(l\cup L) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
+] [3]
+\openout2 = `analisadorLexico.aux'.
 
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.58 2
-       & else & (e\cup E)(l\cup L)(s\cup S)(e\cup E) \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.58 2
-       & else & (e\cup E)(l\cup L)(s\cup S)(e\cup E) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.58 2
-       & else & (e\cup E)(l\cup L)(s\cup S)(e\cup E) \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.58 2 & else & (e\cup
-                       E)(l\cup L)(s\cup S)(e\cup E) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.59 3
-       & ( & ( \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.59 3
-       & ( & ( \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.59 3
-       & ( & ( \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.62 6 & write & (w\cup
-                        W)(r\cup R)(i\cup I)(t\cup T)(e\cup E) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.63 7
-       & int & (i\cup I)(n\cup N)(t\cup T) \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.63 7
-       & int & (i\cup I)(n\cup N)(t\cup T) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.63 7
-       & int & (i\cup I)(n\cup N)(t\cup T) \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.63 7 & int & (i\cup
-                      I)(n\cup N)(t\cup T) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.64 8
-       & \&\& & \&\& \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.64 8
-       & \&\& & \&\& \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.64 8
-       & \&\& & \&\& \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.67 11 & begin & (b\cup
-                         B)(e\cup E)(g\cup G)(i\cup I)(n\cup N) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.68 1
-      2 & writeln & (w\cup W)(r\cup R)(i\cup I)(t\cup T)(e\cup E)(l\cup L)(n...
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.68 1
-      2 & writeln & (w\cup W)(r\cup R)(i\cup I)(t\cup T)(e\cup E)(l\cup L)(n...
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.68 1
-      2 & writeln & (w\cup W)(r\cup R)(i\cup I)(t\cup T)(e\cup E)(l\cup L)(n...
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.68 12 & writeln & (w\cup
-                           W)(r\cup R)(i\cup I)(t\cup T)(e\cup E)(l\cup L)(n...
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.69 1
-      3 & byte & (b\cup B)(y\cup Y)(t\cup T)(e\cup E) \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.69 1
-      3 & byte & (b\cup B)(y\cup Y)(t\cup T)(e\cup E) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.69 1
-      3 & byte & (b\cup B)(y\cup Y)(t\cup T)(e\cup E) \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.69 13 & byte & (b\cup
-                        B)(y\cup Y)(t\cup T)(e\cup E) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.70 1
-      4 & || & || \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.70 1
-      4 & || & || \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.70 1
-      4 & || & || \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.73 17 & endwhile & (e\cup
-                            E)(n\cup N)(d\cup D)(w\cup W)(h\cup H)(i\cup I)(...
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.74 1
-      8 & TRUE & TRUE \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.74 1
-      8 & TRUE & TRUE \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.74 1
-      8 & TRUE & TRUE \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.75 19 & string & (s\cup
-                          S)(t\cup T)(r\cup R)(i\cup I)(n\cup N)(g\cup G) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.76 2
-      0 & ! & ! \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.76 2
-      0 & ! & ! \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.76 2
-      0 & ! & ! \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.79 23 & endif & (e\cup
-                         E)(n\cup N)(d\cup D)(i\cup I)(F\cup f) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.80 2
-      4 & FALSE & FALSE \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.80 2
-      4 & FALSE & FALSE \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.80 2
-      4 & FALSE & FALSE \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.81 25 & while & (w\cup
-                         W)(h\cup H)(i\cup I)(l\cup L)(e\cup E) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.82 2
-      6 & <- & <- \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.82 2
-      6 & <- & <- \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.82 2
-      6 & <- & <- \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.85 29 & endelse & (e\cup
-                           E)(n\cup N)(d\cup D)(e\cup  E)(l\cup L)(s\cup S)(...
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.86 3
-      0 & boolean & (b\cup B)(o\cup O)(o\cup O)(l\cup L)(e\cup E)(a\cup A)(n...
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.86 3
-      0 & boolean & (b\cup B)(o\cup O)(o\cup O)(l\cup L)(e\cup E)(a\cup A)(n...
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.86 3
-      0 & boolean & (b\cup B)(o\cup O)(o\cup O)(l\cup L)(e\cup E)(a\cup A)(n...
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.86 30 & boolean & (b\cup
-                           B)(o\cup O)(o\cup O)(l\cup L)(e\cup E)(a\cup A)(n...
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.87 3
-      1 & if & (i\cup I)(F\cup f) \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.87 3
-      1 & if & (i\cup I)(F\cup f) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.87 3
-      1 & if & (i\cup I)(F\cup f) \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.87 31 & if & (i\cup
-                      I)(F\cup f) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.88 3
-      2 & = & = \\
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.88 3
-      2 & = & = \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.88 3
-      2 & = & = \\
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.91 35 & readln & (r\cup
-                          R)(e\cup E)(a\cup A)(d\cup  D)(l\cup L)(n\cup N) \\
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Extra }, or forgotten $.
-<template> \unskip }
-                    \hskip \tabcolsep \endtemplate 
-l.92 \end
-         {tabular}
-I've deleted a group-closing symbol because it seems to be
-spurious, as in `$x}$'. But perhaps the } is legitimate and
-you forgot something else, as in `\hbox{$x}'. In such cases
-the way to recover is to insert both the forgotten and the
-deleted material, e.g., by typing `I$}'.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.92 \end
-         {tabular}
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing } inserted.
-<inserted text> 
-                }
-l.92 \end
-         {tabular}
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
+ (analisadorLexico.tex
+<figuras/automato.png, id=19, 1176.395pt x 973.6375pt>
+File: figuras/automato.png Graphic file (type png)
+<use figuras/automato.png>
+Package pdftex.def Info: figuras/automato.png  used on input line 4.
+(pdftex.def)             Requested size: 409.71692pt x 339.09944pt.
+) [4
 
 
-LaTeX Warning: `!h' float specifier changed to `!ht'.
+ <./figuras/automato.png>]
+\openout2 = `ger.aux'.
 
-<figuras/automato.jpg, id=15, 804.00375pt x 730.22812pt>
-File: figuras/automato.jpg Graphic file (type jpg)
-<use figuras/automato.jpg>
-Package pdftex.def Info: figuras/automato.jpg  used on input line 102.
-(pdftex.def)             Requested size: 409.71692pt x 372.1217pt.
-<figuras/GER_LL1-1.png, id=16, 1660.2025pt x 2347.77126pt>
+ (ger.tex
+<figuras/GER_LL1-1.png, id=25, 1660.2025pt x 2347.77126pt>
 File: figuras/GER_LL1-1.png Graphic file (type png)
 <use figuras/GER_LL1-1.png>
-Package pdftex.def Info: figuras/GER_LL1-1.png  used on input line 116.
+Package pdftex.def Info: figuras/GER_LL1-1.png  used on input line 4.
 (pdftex.def)             Requested size: 409.71692pt x 579.3825pt.
-) [3] [4] [5 <./figuras/automato.jpg>] [6 <./figuras/GER_LL1-1.png>]
-(principal.aux (textos.aux))
+) [5
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ <./figuras/GER_LL1-1.png>]
+\openout2 = `glc.aux'.
+
+ (glc.tex
+<figuras/GLC_LL1-1.png, id=30, 1660.2025pt x 2347.77126pt>
+File: figuras/GLC_LL1-1.png Graphic file (type png)
+<use figuras/GLC_LL1-1.png>
+Package pdftex.def Info: figuras/GLC_LL1-1.png  used on input line 4.
+(pdftex.def)             Requested size: 409.71692pt x 579.3825pt.
+<figuras/GLC_LL1-2.png, id=31, 1660.2025pt x 2347.77126pt>
+File: figuras/GLC_LL1-2.png Graphic file (type png)
+<use figuras/GLC_LL1-2.png>
+Package pdftex.def Info: figuras/GLC_LL1-2.png  used on input line 13.
+(pdftex.def)             Requested size: 409.71692pt x 579.3825pt.
+) [6
+
+
+ <./figuras/GLC_LL1-1.png>] [7 <./figuras/GLC_LL1-2.png>] (principal.aux (alfab
+eto.aux) (analisadorLexico.aux) (ger.aux)
+(glc.aux))
+
+LaTeX Warning: There were multiply-defined labels.
 
  )
 (\end occurred inside a group at level 1)
@@ -1537,23 +1009,22 @@ LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 ### semi simple group (level 1) entered at line 84 (\begingroup)
 ### bottom level 
 Here is how much of TeX's memory you used:
- 19112 strings out of 480892
- 367617 string characters out of 2897992
- 700527 words of memory out of 3000000
- 34601 multiletter control sequences out of 15000+200000
- 553793 words of font info for 51 fonts, out of 3000000 for 9000
+ 19164 strings out of 480892
+ 369368 string characters out of 2897992
+ 701978 words of memory out of 3000000
+ 34625 multiletter control sequences out of 15000+200000
+ 558273 words of font info for 54 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 68i,12n,64p,415b,426s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 68i,12n,64p,415b,428s stack positions out of 5000i,500n,10000p,200000b,50000s
 {C:/Users/vinic/AppData/Local/Programs/MiKTeX 2.9/fonts/enc/dvi
 ps/base/8r.enc}<C:/Users/vinic/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/pu
-blic/amsfonts/cm/cmmi12.pfb><C:/Users/vinic/AppData/Local/Programs/MiKTeX 2.9/f
-onts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/vinic/AppData/Local/Programs/
-MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/vinic/AppData/Lo
-cal/Programs/MiKTeX 2.9/fonts/type1/urw/times/utmb8a.pfb><C:/Users/vinic/AppDat
-a/Local/Programs/MiKTeX 2.9/fonts/type1/urw/times/utmr8a.pfb>
-Output written on principal.pdf (6 pages, 277868 bytes).
+blic/amsfonts/cm/cmr12.pfb><C:/Users/vinic/AppData/Local/Programs/MiKTeX 2.9/fo
+nts/type1/urw/times/utmb8a.pfb><C:/Users/vinic/AppData/Local/Programs/MiKTeX 2.
+9/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/vinic/AppData/Local/Programs/MiKT
+eX 2.9/fonts/type1/urw/times/utmr8a.pfb>
+Output written on principal.pdf (7 pages, 413657 bytes).
 PDF statistics:
- 49 PDF objects out of 1000 (max. 8388607)
+ 56 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 28 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 38 words of extra memory for PDF output out of 10000 (max. 10000000)
 

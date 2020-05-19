@@ -28,6 +28,8 @@ class Symbol{
     private String lexema;
     private byte endereco;
     private String token;
+    private String classe;
+    private String tipo;
 
     public Symbol(byte endereco,String lexema,String token){
         this.endereco = endereco;
@@ -35,11 +37,23 @@ class Symbol{
         this.token = token;
     }// End Symbol()
 
+    public Symbol(byte endereco,String lexema,String token,String classe,String tipo){
+        this.endereco = endereco;
+        this.lexema = lexema;
+        this.token = token;
+        this.classe = classe;
+        this.tipo = tipo;
+    }// End Symbol()
+
     public Symbol(String lexema,String token){
         this.lexema = lexema;
         this.token = token;
     }// End Symbol()
 
+    public void setTipo(String tipo){this.tipo = tipo; }
+    public String getTipo(){ return this.tipo; }
+    public void setClasse(String classe){ this.classe = classe; }
+    public String getClasse() { return this.classe;}
     public String getLexema(){return this.lexema;}
     public void setLexema(String lexema){this.lexema = lexema;}
     public byte getEndereco(){return this.endereco;}
@@ -264,14 +278,8 @@ class AnalisadorLexico{
         }else if(lexema.equals(SymbolTable.CONSTANTE)){
             token = new Symbol(SymbolTable.CONSTANTE,SymbolTable.CONSTANTE);
         }else{
-            String aux = lexema.toLowerCase();
-            token = this.symbolTable.pesquisa(aux);
-
-            if(token != null && !token.getLexema().equals(lexema)){ 
-                token = new Symbol(lexema,lexema);
-            }else if(token == null){
-                token = this.symbolTable.inserir("id",lexema);
-            }// End else
+            token = this.symbolTable.pesquisa(lexema);
+            if(token == null) token = this.symbolTable.inserir("id",lexema);
         }// End if
 
         return token;
@@ -303,7 +311,7 @@ class AnalisadorLexico{
             while(s != FINAL_STATE){
                 if((read = this.bufferedReader.read()) != EOF){
                     char chr = (char)read;
-                    c = (chr + "");
+                    c = (chr + "").toLowerCase();
                     this.readskip++; // Contador do número de caracteres lidos
                     if(!isLexeme(c)){
                         new Status(this.line + "\ncaractere invalido.");
