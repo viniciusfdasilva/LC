@@ -1,6 +1,7 @@
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.util.HashMap;
 import java.io.InputStreamReader;
 import java.io.FileWriter;
@@ -573,6 +574,7 @@ class AnalisadorSintatico{
     private String token;
     private String lexema;
     private Symbol symbol;
+    private Assembly assembly;
 
     // Atributos das Regras de derivação
     private boolean Declarar_isnegativo;
@@ -589,15 +591,13 @@ class AnalisadorSintatico{
     private String filename;
     SymbolTable ts;
 
-    int memoria_count;
-
     public AnalisadorSintatico(String filename,long read,int line,SymbolTable ts) throws IOException{
         this.readSkip = read;
         this.filename = filename;
         this.line = line;
         this.symbol = null;
         this.ts = ts;
-        this.memoria_count = 0;
+        this.assembly = new Assembly();
     }// End AnalisadorSintatico()
 
     public long getReadSkip(){
@@ -719,18 +719,40 @@ class AnalisadorSintatico{
                     constant = Integer.parseInt(const_aux.getLexema());
                 }// End else
                 if(constant >= 0 && constant <= 255){
+
+                    // ASSEMBLY DECLARAÇÃO BYTE
+                    assembly.getDeclaracoes().put("sword ");
+                    
                     const_aux.setTipo("tipo-byte");
                 }else{
+                    // ASSEMBLY DECLARAÇÃO INTEIRO
+                    assembly.getDeclaracoes().put("sword ");
+
                     const_aux.setTipo("tipo-inteiro");
                 }// End else
             }// End if
-
+            
             // RULE [22] {se id.tipo == NULO entao id.tipo = const.tipo senaose id.tipo != const.tipo entao ERRO}
             if(id_aux.getTipo().equals("")){
                 id_aux.setTipo(const_aux.getTipo());
             }else if(!id_aux.getTipo().equals(const_aux.getTipo())){
-                new Status(this.line + "\ntipo incompativeis.");
+                new Status(this.line + "\ntipos incompativeis.");
             }// End else
+
+            // ASSEMBLY [1]
+            if(Declarar_isnegativo){
+                // ASSEMBLY DECLARAÇÃO INTEIRO
+                assembly.getDeclaracoes().put("sword ");
+                
+            }else if(const_aux.getTipo().equals("tipo-string")){
+                // ASSEMBLY DECLARAÇÃO STRING
+                assembly.getDeclaracoes().put("sword ");
+                
+            }else if(const_aux.getTipo().equals("tipo-lógico")){
+                // ASSEMBLY DECLARAÇÃO BOOLEAN
+                assembly.getDeclaracoes().put("sword ");
+
+            }// End else if
 
             casaToken(";");
         }else{
@@ -1303,6 +1325,37 @@ class AnalisadorSintatico{
         return F_tipo;
     }// End procedure_F()
 }// End AnalisadorSintatico()
+
+class Assembly{
+    private ArrayList<String> declaracoes;
+    private ArrayList<String> comandos;
+    private BufferedWrite fonteAssembly;
+
+    public Assembly(){
+        this.assembly = new ArrayList<>();
+        this.fonteAssembly = new BufferedWriter(new FileWrite("c:/8086/fonte.asm"));
+    }//End Assembly()
+
+    public ArrayList<String> getComandos(){
+        return this.comandos;
+    }// End getComandos();
+
+    public void setComandos(ArrayList<String> comandos){
+        this.comandos = comandos;
+    }// End setComandos()
+    
+    public ArrayList<String> getDeclaracoes(){
+        return this.declaracoes;
+    }// End getDeclaracoes();
+
+    public void setDeclaracoes(ArrayList<String> declaracoes){
+        this.declaracoes= declaracoes;
+    }// End setDeclaracoes()
+
+    public getAssemblySource(){
+
+    }// End getAssembly()
+}// End Assembly
 
 /**
  * @author Vinicius Silva
