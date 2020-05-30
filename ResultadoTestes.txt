@@ -1,0 +1,15 @@
+Teste	Público 	Private
+----------------------------
+T13		100.0%		16.6% tipos incompativeis.
+T16 	100.0%		70.0%
+T18 	100.0%		16.6% classe de identificador incompatível[lex].
+T21 	100.0%		0.0% tipos incompativeis.
+T22 	100.0%		16.6% tipos incompativeis.
+----------------------------
+
+identificador nao declarado[lex].
+identificador ja declarado[lex].
+classe de identificador incompatível[lex].
+tipos incompativeis.
+
+mul  | mul reg | ax <- al * reg

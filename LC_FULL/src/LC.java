@@ -729,7 +729,7 @@ class AnalisadorSintatico{
             if(id_aux.getTipo().equals("")){
                 id_aux.setTipo(const_aux.getTipo());
             }else if(!id_aux.getTipo().equals(const_aux.getTipo())){
-                new Status(this.line + "\ntipo incompativeis.");
+                new Status(this.line + "\ntipos incompativeis.");
             }// End else
 
             casaToken(";");
@@ -771,13 +771,16 @@ class AnalisadorSintatico{
 
 
             // RULE [18] {Listaids.tipo = id.tipo}
-            procedure_ListaIds(id_aux.getTipo());
+            procedure_ListaIds(id_aux.getTipo(),id_aux.getClasse(),id_aux.getLexema());
             casaToken(";");
         }// End else
     }// End procedure_Declarar()
 
-    public void procedure_ListaIds(String Listaids_tipo){
+    public void procedure_ListaIds(String Listaids_tipo, String Listaids_classe ,String lex){
         if(this.token.equals("<-")){
+            if(Listaids_classe.equals("classe-const")){
+                new Status(this.line + "\nclasse de identificador incompatível ["+ lex +"].");
+            }// End if
 
             // RULE [19] {Atrib.tipo = Listaids.tipo}
             procedure_Atrib(Listaids_tipo);
@@ -799,6 +802,10 @@ class AnalisadorSintatico{
             id_aux.setTipo(Listaids_tipo);
 
             if(this.token.equals("<-")){
+                if(id_aux.getClasse().equals("classe-const")){
+                    new Status(this.line + "\nclasse de identificador incompatível ["+ id_aux.getLexema() +"].");
+                }// End if
+                
                 // RULE [17] {Atrib.tipo = id.tipo}
                 procedure_Atrib(id_aux.getTipo());
             }// End if
@@ -871,7 +878,7 @@ class AnalisadorSintatico{
 
         // RULE [4] {se id.classe != classe-var entao ERRO}
         if(!id_aux.getClasse().equals("classe-var")){
-            new Status(this.line + "\nclasse de identificador imcompatível ["+ id_aux.getLexema() +"].");
+            new Status(this.line + "\nclasse de identificador incompatível ["+ id_aux.getLexema() +"].");
         }// End if
 
         casaToken("<-");
@@ -1332,10 +1339,11 @@ public class LC{
         getBuffer(); // Recebe e joga a entrada em um buffer
 
         try{                                 
+        
             analisadorLexico = new AnalisadorLexico(new FileReader(FILE_NAME),line,readskip);                          
             lexeme = analisadorLexico.analiseLexica();
             setValues(); // Seta a quantidade de caracteres a serem pulados e o valor da linha
-            analisadorSintatico = new AnalisadorSintatico(FILE_NAME,readskip,line,analisadorLexico.getSymbolTable());
+            analisadorSintatico = new AnalisadorSintatico(FILE_NAME,readskip,line,analisadorLexico.getSymbolTable());   
             analisadorSintatico.setToken(lexeme.getToken());
             analisadorSintatico.setLexema(lexeme.getLexema());
             analisadorSintatico.procedure_S();  
