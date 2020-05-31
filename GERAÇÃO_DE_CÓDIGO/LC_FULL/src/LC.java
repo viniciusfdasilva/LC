@@ -586,10 +586,20 @@ class AnalisadorSintatico{
     private boolean F_isnegativo;
     private String F_tipo;
 
+    private String F_end;
+    private String T_end;
+    private String Exp_end;
+    private String Expressao_end;
+    private String T_op;
+    private String Exp_op;
+    private String Expressao_op;
+
     private long readSkip;
     private int line;
     private String filename;
     SymbolTable ts;
+
+    int memoria_count;
 
     public AnalisadorSintatico(String filename,long read,int line,SymbolTable ts) throws IOException{
         this.readSkip = read;
@@ -597,6 +607,7 @@ class AnalisadorSintatico{
         this.line = line;
         this.symbol = null;
         this.ts = ts;
+        this.memoria_count = 0;
         this.assembly = new Assembly();
     }// End AnalisadorSintatico()
 
@@ -696,14 +707,14 @@ class AnalisadorSintatico{
                 casaToken("-");
             }// End if
 
-            // RULE [15] {se Declarar.isnegativo = true entao id.tipo = tipo-inteiro}
-            if(Declarar_isnegativo){
-                id_aux.setTipo("tipo-inteiro");
-            }// End if
-
             Symbol const_aux = this.symbol;
             casaToken("const");
             
+            //[15] {se Declarar.isnegativo = true entao const.tipo = tipo-inteiro}
+            if(Declarar_isnegativo){
+                const_aux.setTipo("tipo-inteiro");
+            }// End if
+
             /**
              * RULE [21] {se const.tipo != tipo-string e const.tipo != tipo-lógico e 
              * const.tipo != NULO e const.lexema >= 0 e const.lexema <= 255 entao 
@@ -719,40 +730,28 @@ class AnalisadorSintatico{
                     constant = Integer.parseInt(const_aux.getLexema());
                 }// End else
                 if(constant >= 0 && constant <= 255){
-
-                    // ASSEMBLY DECLARAÇÃO BYTE
-                    assembly.getDeclaracoes().put("sword ");
-                    
                     const_aux.setTipo("tipo-byte");
                 }else{
-                    // ASSEMBLY DECLARAÇÃO INTEIRO
-                    assembly.getDeclaracoes().put("sword ");
-
                     const_aux.setTipo("tipo-inteiro");
                 }// End else
             }// End if
-            
+
             // RULE [22] {se id.tipo == NULO entao id.tipo = const.tipo senaose id.tipo != const.tipo entao ERRO}
-            if(id_aux.getTipo().equals("")){
-                id_aux.setTipo(const_aux.getTipo());
-            }else if(!id_aux.getTipo().equals(const_aux.getTipo())){
-                new Status(this.line + "\ntipos incompativeis.");
-            }// End else
+            id_aux.setTipo(const_aux.getTipo());
 
-            // ASSEMBLY [1]
-            if(Declarar_isnegativo){
-                // ASSEMBLY DECLARAÇÃO INTEIRO
-                assembly.getDeclaracoes().put("sword ");
-                
+            /**
+             * ASSEMBLY [1] {se Declarar.isnegativo = true assembly.getDeclaracoes().put("sword ");
+             *               senao se const.tipo = tipo-string assembly.getDeclaracoes().put("sword ");
+             *               senao se const.tipo = tipo-lógico assembly.getDeclaracoes().put("sword ");}
+             */
+            if(const_aux.setTipo("tipo-inteiro")){
+                this.assembly.getDeclaracao().put("sword "+const_aux.getLexema()+"; int em "+"ESCREVER ENDEREÇO");
             }else if(const_aux.getTipo().equals("tipo-string")){
-                // ASSEMBLY DECLARAÇÃO STRING
-                assembly.getDeclaracoes().put("sword ");
-                
-            }else if(const_aux.getTipo().equals("tipo-lógico")){
-                // ASSEMBLY DECLARAÇÃO BOOLEAN
-                assembly.getDeclaracoes().put("sword ");
-
-            }// End else if
+                const_aux.setLexema(const_aux.getLexema().replace("\"",""));
+                this.assembly.getDeclaracao().put("byte "+const_aux.getLexema()+"$"+" ; string em "+"ESCREVER ENDEREÇO");
+            }else{
+                this.assembly.getDeclaracao().put("byte "+const_aux.getLexema()+" ; boolean em "+"ESCREVER ENDEREÇO");
+            }// End else
 
             casaToken(";");
         }else{
@@ -793,17 +792,44 @@ class AnalisadorSintatico{
 
 
             // RULE [18] {Listaids.tipo = id.tipo}
-            procedure_ListaIds(id_aux.getTipo());
+            procedure_ListaIds(id_aux.getTipo(),id_aux.getClasse(),id_aux.getLexema());
             casaToken(";");
         }// End else
     }// End procedure_Declarar()
 
-    public void procedure_ListaIds(String Listaids_tipo){
+    public void procedure_ListaIds(String Listaids_tipo, String Listaids_classe ,String lex){
+        boolean ListaIds_isatribuicao = false;
         if(this.token.equals("<-")){
+            if(Listaids_classe.equals("classe-const")){
+                new Status(this.line + "\nclasse de identificador incompativel ["+ lex +"].");
+            }// End if
 
             // RULE [19] {Atrib.tipo = Listaids.tipo}
             procedure_Atrib(Listaids_tipo);
+
+            // ASSEMBLY [2] {ListaIds.isatribuicao = true}
+            ListaIds_isatribuicao = true;
         }// End if
+
+        /**
+         * [3] {se ListaIds.isatribuicao = false se ListaIds.tipo = tipo-inteiro 
+	            assembly.getDeclaracoes().put("sword ?"); senao se ListsIds.tipo = tipo-byte
+	            assembly.getDeclaracoes().put("byte ?"); senao se ListaIds.tipo = tipo-string
+	            assembly.getDeclaracoes().put("byte ?"); senao se Lista.tipo = tipo-lógico
+	            assembly.getDeclaracoes().put("byte ? ");}
+         */
+        if(!ListaIds_isatribuicao){
+            if(Listaids_tipo.equals("tipo-inteiro")){
+                this.assembly.getDeclaracao().put("sword ?");
+            }else if(Listaids_tipo.equals("tipo-byte")){
+                this.assembly.getDeclaracao().put("byte ?");
+            }else if(Listaids_tipo.equals("tipo-string")){
+                this.assembly.getDeclaracao().put("byte ?");
+            }else{
+                this.assembly.getDeclaracao().put("byte ?");
+            }// End else
+        }// End if
+        ListaIds_isatribuicao = false;
 
         while(this.token.equals(",")){
             casaToken(",");
@@ -821,9 +847,35 @@ class AnalisadorSintatico{
             id_aux.setTipo(Listaids_tipo);
 
             if(this.token.equals("<-")){
+                if(id_aux.getClasse().equals("classe-const")){
+                    new Status(this.line + "\nclasse de identificador incompativel ["+ id_aux.getLexema() +"].");
+                }// End if
+                
                 // RULE [17] {Atrib.tipo = id.tipo}
                 procedure_Atrib(id_aux.getTipo());
+
+                // ASSEMBLY [2] {ListaIds.isatribuicao = true}
+                ListaIds_isatribuicao = true;
             }// End if
+
+             /**
+                 * ASSEMBLY [3] {se ListaIds.isatribuicao = false se ListaIds.tipo = tipo-inteiro 
+                    assembly.getDeclaracoes().put("sword ?"); senao se ListsIds.tipo = tipo-byte
+                    assembly.getDeclaracoes().put("byte ?"); senao se ListaIds.tipo = tipo-string
+                    assembly.getDeclaracoes().put("byte ?"); senao se Lista.tipo = tipo-lógico
+                    assembly.getDeclaracoes().put("byte ? ");}
+            */
+            if(!ListaIds_isatribuicao){
+                if(Listaids_tipo.equals("tipo-inteiro")){
+                    this.assembly.getDeclaracao().put("sword ?");
+                }else if(Listaids_tipo.equals("tipo-byte")){
+                    this.assembly.getDeclaracao().put("byte ?");
+                }else if(Listaids_tipo.equals("tipo-string")){
+                    this.assembly.getDeclaracao().put("byte ?");
+                }else{
+                    this.assembly.getDeclaracao().put("byte ?");
+                }// End else
+            }// End if"
         }// End while
     }// End procedure_ListaIds()
 
@@ -864,6 +916,20 @@ class AnalisadorSintatico{
         if(!Atrib_tipo.equals(const_aux.getTipo())){
             new Status(this.line + "\ntipos incompativeis.");
         }// End if
+
+        /**
+         * ASSEMBLY [1] {se Declarar.isnegativo = true assembly.getDeclaracoes().put("sword ");
+         *               senao se const.tipo = tipo-string assembly.getDeclaracoes().put("sword ");
+         *               senao se const.tipo = tipo-lógico assembly.getDeclaracoes().put("sword ");}
+         */
+        if(const_aux.setTipo("tipo-inteiro")){
+            this.assembly.getDeclaracao().put("sword "+const_aux.getLexema()+"; int em "+"ESCREVER ENDEREÇO");
+        }else if(const_aux.getTipo().equals("tipo-string")){
+            const_aux.setLexema(const_aux.getLexema().replace("\"",""));
+            this.assembly.getDeclaracao().put("byte "+const_aux.getLexema()+"$"+" ; string em "+"ESCREVER ENDEREÇO");
+        }else{
+            this.assembly.getDeclaracao().put("byte "+const_aux.getLexema()+" ; boolean em "+"ESCREVER ENDEREÇO");
+        }// End else
     }// End procedure_Atrib()
 
     public void procedure_Comando(){
@@ -893,7 +959,7 @@ class AnalisadorSintatico{
 
         // RULE [4] {se id.classe != classe-var entao ERRO}
         if(!id_aux.getClasse().equals("classe-var")){
-            new Status(this.line + "\nclasse de identificador imcompatível ["+ id_aux.getLexema() +"].");
+            new Status(this.line + "\nclasse de identificador incompativel ["+ id_aux.getLexema() +"].");
         }// End if
 
         casaToken("<-");
@@ -905,13 +971,43 @@ class AnalisadorSintatico{
             new Status(this.line + "\ntipos incompativeis.");
         }// End if
 
+        /**
+         * [4] {mov ax, DS: [Expressao.end]}
+         *     {se id.tipo != Expressao.tipo entao  cwd}
+         *     {mov DS:[id.end], ax}?
+         */
+          this.assembly.getComandos().put("mov ax, DS:["+ " ENDEREÇO DA EXPRESSÃO " +"] ; movimentar o valor da expressao para ax");
+          if(!id_aux.getTipo().equals(Expressao_aux)){
+            this.assembly.getComandos().put("cwd ; casting");
+          }// End if
+          this.assembly.getComandos().put("mov DS:["+id_aux.getEndereco()+"],ax");
+
         casaToken(";");
     }// End procedure_Atribuicao()
 
     public void procedure_Repeticao(){
         casaToken("while");
+
+        /**
+         * [23] {RotInicio = NovoRot}
+                {RotFim = NovoRot}
+                {RotInicio:}
+         */
+        // RotInicio = NovoRot
+        // RotFim = NovoRot
+        this.assembly.getComandos().put("   RotInicio :   ");
+
         casaToken("(");
         String Expressao_aux = procedure_Expressao();
+
+        /**
+         * [24] { mov ax, DS:[Expressao.end] }
+                {cmp ax, 0 
+                je RotFim}
+         */
+        this.assembly.getComandos().put("mov ax, DS:["+ "ENDEREÇO EXPRESSAO" +"]");
+        this.assembly.getComandos().put("cmp ax,0");
+        this.assembly.getComandos().put("je RotFim");
 
         // RULE [43] {se Expressao.tipo != tipo-lógico entao ERRO}
         if(!Expressao_aux.equals("tipo-lógico")){
@@ -920,6 +1016,13 @@ class AnalisadorSintatico{
 
         casaToken(")");
         procedure_Blocowhile();
+
+        /**
+         * [25]  {jmp RotInicio}
+                 {RotFim:}
+         */
+        this.assembly.getComandos().put("jmp RotInicio");
+        this.assembly.getComandos().put("  RotFim:    ");
     }// End procedure_Repeticao()
 
     public void procedure_Blocowhile(){
@@ -936,8 +1039,18 @@ class AnalisadorSintatico{
 
     public void procedure_Teste(){
         casaToken("if");
+
+        // ASSEMBLY [19] {RotFalso = NovoRot} {RotFim = NovoRot}
+        //RotFalso = NovoRot
+        // RotFim = NovoRot
+
         casaToken("(");
         String Expressao_aux = procedure_Expressao();
+
+        // ASSEMBLY [20] {mov ax, DS:[Expressao.end] } {cmp ax, 0} {je RotFalso}
+        this.assembly.getComandos().put("mov ax, DS:["+"   ENDEREÇO EXPRESSAO "+"]");
+        this.assembly.getComandos().put("cmp ax,0");
+        this.assembly.getComandos().put("je [===RotFalso===]");
 
         // RULE [43] {se Expressao.tipo != tipo-lógico entao ERRO}
         if(!Expressao_aux.equals("tipo-lógico")){
@@ -963,17 +1076,34 @@ class AnalisadorSintatico{
         }// End while
         casaToken("endif");
         casaToken("else");
+
+        // ASSEMBLY [21] {jmp RotFim } {RotFalso:}
+        this.assembly.getComandos.put("jmp [===RotFim===]");
+        this.assembly.getComandos.put(" RotFalso: ");
+
         casaToken("begin");
         procedure_Comando();
         while(token.equals("id")||token.equals("while")||token.equals("if")||token.equals(";")||token.equals("readln")||token.equals("write")||token.equals("writeln")){
             procedure_Comando();
         }// End while
+
+        // ASSEMBLY [22] {RotFim:}
+        this.assembly.getComandos().put("  RotFim:");
+
         casaToken("endelse");
     }// End procedure_Blocoif()
 
     public void procedure_Blocoelse(){
         casaToken("else");
+
+        // ASSEMBLY [21] {jmp RotFim } {RotFalso:}
+        this.assembly.getComandos.put("jmp [===RotFim===]");
+        this.assembly.getComandos.put(" RotFalso: ");
+
         procedure_Comando();
+
+        // ASSEMBLY [22] {RotFim:}
+        this.assembly.getComandos().put("  RotFim: ");
     }// End procedure_Blocoelse()
 
     public void procedure_Nulo(){
@@ -991,6 +1121,11 @@ class AnalisadorSintatico{
             new Status(this.line + "\nidentificador nao declarado ["+ id_aux.getLexema() +"].");
         }// End if
 
+        // RULE [4] {se id.classe != classe-var entao ERRO}
+        if(!id_aux.getClasse().equals("classe-var")){
+            new Status(this.line + "\nclasse de identificador incompativel ["+ id_aux.getLexema() +"].");
+        }// End if
+
         // RULE [44] {se id.tipo != tipo-byte e id.tipo != tipo-inteiro e tipo.tipo != tipo-string}
         if(!id_aux.getTipo().equals("tipo-byte") && !id_aux.getTipo().equals("tipo-inteiro") && !id_aux.getTipo().equals("tipo-string")){
             System.out.println(id_aux.getTipo());
@@ -998,6 +1133,67 @@ class AnalisadorSintatico{
         }// End if
 
         casaToken(")");
+
+        this.assembly.getComandos().put("mov dx, ENDEREÇO DO BUFFER");
+        this.assembly.getComandos().put("mov al, 0FFh");
+        this.assembly.getComandos().put("mov ds:[ENDEREÇO DO BUFFER],al");
+        this.assembly.getComandos().put("mov ah, 0Ah");
+        this.assembly.getComandos().put("int 21h");
+
+        this.assembly.getComandos().put("mov ah,02h");
+        this.assembly.getComandos().put("mov dl,0Dh");
+        this.assembly.getComandos().put("int 21h");
+        this.assembly.getComandos().put("DL, 0Ah");
+        this.assembly.getComandos().put("int 21h");
+
+        this.assembly.getComandos().put("mov di, " + "  ENDEREÇO DO BUFFER+2  " + ";posição do string");
+        if(!id_aux.getTipo().equals("tipo-string")){
+            this.assembly.getComandos().put("mov ax, 0");
+            this.assembly.getComandos().put("mov cx, 10");
+            this.assembly.getComandos().put("mov dx, 1");
+            this.assembly.getComandos().put("mov bh, 0");
+            this.assembly.getComandos().put("mov bl, ds:[di]");
+            this.assembly.getComandos().put("cmp bx, 2Dh");
+			//String rot = rotulo.novoRotulo();
+            this.assembly.getComandos().put("jne " + rot);
+            this.assembly.getComandos().put("mov dx, -1");
+            this.assembly.getComandos().put("add di, 1");
+            this.assembly.getComandos().put("mov bl, ds:[di]");
+            //this.assembly.getComandos().put("rot" + ":");
+            this.assembly.getComandos().put("push dx");
+            this.assembly.getComandos().put("mov dx, 0");
+			//String rot1 = rotulo.novoRotulo();
+            this.assembly.getComandos().put(      rot1 + ":       ");
+            this.assembly.getComandos().put("cmp bx, 0Dh");
+			//String rot2 = rotulo.novoRotulo();
+            this.assembly.getComandos().put("je " + rot2         );
+            this.assembly.getComandos().put("imul cx");
+            this.assembly.getComandos().put("add bx, -48");
+            this.assembly.getComandos().put("add ax, bx");
+            this.assembly.getComandos().put("add di, 1");
+            this.assembly.getComandos().put("mov bh, 0");
+            this.assembly.getComandos().put("mov bl, ds:[di]");
+            this.assembly.getComandos().put("jmp " + rot1);
+            this.assembly.getComandos().put(       rot2 + ":"       );
+            this.assembly.getComandos().put("pop cx");
+            this.assembly.getComandos().put("imul cx");
+            this.assembly.getComandos().put("mov DS:[" + id_aux.getEnd() + "], ax");
+        }else{
+            this.assembly.getComandos().put("mov si, " + tmp.getEnd());
+			//String rotString = rotulo.novoRotulo();
+            this.assembly.getComandos().put(      rotString + ":"   );
+		    this.assembly.getComandos().put("mov al, ds:[di]");	
+            this.assembly.getComandos().put("cmp al, 0dh ;verifica fim string");
+			//String rot2 = rotulo.novoRotulo();
+            this.assembly.getComandos().put("je " + rot2 + " ;salta se fim string");	
+            this.assembly.getComandos().put("mov ds:[si], al ;próximo caractere");
+            this.assembly.getComandos().put("add di, 1 ;incrementa base");
+            this.assembly.getComandos().put("add si, 1");
+            this.assembly.getComandos().put("jmp " + rotString + " ;loop");
+            this.assembly.getComandos().put(     rot2 + ":"     );
+            this.assembly.getComandos().put("mov al, 024h ;fim de string");
+            this.assembly.getComandos().put("mov ds:[si], al ;grava '$'");
+        }// End else
         casaToken(";");
     }// End procedure_Leitura()
 
@@ -1007,28 +1203,133 @@ class AnalisadorSintatico{
             casaToken("(");
             procedure_ListaExpressoes();
             casaToken(")");
+
+
             casaToken(";");
         }else{
             casaToken("writeln");
             casaToken("(");
             procedure_ListaExpressoes();
+
+            this.assembly.getComandos().put("mov ah, 02h");	
+		    this.assembly.getComandos().put("mov dl, 0Dh");
+			this.assembly.getComandos().put("int 21h");	
+			this.assembly.getComandos().put("mov DL, 0Ah");	
+            this.assembly.getComandos().put("int 21h");
+            
             casaToken(")");
             casaToken(";");
         }// End else if
     }// End procedure_Escrita()
 
     public void procedure_ListaExpressoes(){
-        procedure_Expressao();
+        String exp_tipo = procedure_Expressao();
+
+        if(Exp_tipo.equals("tipo_string")){
+            this.assembly.getComandos().put("mov dx, " + Exp_end);
+            this.assembly.getComandos().put("mov ah, 09h");
+            this.assembly.getComandos().put("int 21h");
+        }else{
+            this.assembly.getComandos().put("mov ax, DS:[" + Exp_end + "]");
+            this.assembly.getComandos().put("mov di, " + stringEnd + " ;end. string temp."); 
+            this.assembly.getComandos().put("mov cx, 0 ;contador");
+            this.assembly.getComandos().put("cmp ax,0 ;verifica sinal");
+            //String rot = rotulo.novoRotulo();
+            this.assembly.getComandos().put("jge " + rot + " ;salta se numero positivo");
+            this.assembly.getComandos().put("mov bl, 2Dh ;senao, escreve sinal ");
+            this.assembly.getComandos().put("mov ds:[di], bl");
+            this.assembly.getComandos().put("add di, 1 ;incrementa indice");
+            this.assembly.getComandos().put("neg ax ;toma modulo do numero");
+            this.assembly.getComandos().put(rot + ":");
+            this.assembly.getComandos().put("mov bx, 10 ;divisor"); 
+            //String rot1 = rotulo.novoRotulo();
+            this.assembly.getComandos().put(rot1 + ":");
+            this.assembly.getComandos().put("add cx, 1 ;incrementa contador");
+            this.assembly.getComandos().put("mov dx, 0 ;estende 32bits p/ div.");
+            this.assembly.getComandos().put("idiv bx ;divide DXAX por BX");
+            this.assembly.getComandos().put("push dx ;empilha valor do resto");  
+            this.assembly.getComandos().put("cmp ax, 0 ;verifica se quoc.  0");
+            this.assembly.getComandos().put("jne " + rot1 + " ;se nao  0, continua");              
+            //String rot2 = rotulo.novoRotulo();
+            this.assembly.getComandos().put(rot2 + ":");
+            this.assembly.getComandos().put("pop dx ;desempilha valor");
+            this.assembly.getComandos().put("add dx, 30h ;transforma em caractere");
+            this.assembly.getComandos().put("mov ds:[di],dl ;escreve caractere");
+            this.assembly.getComandos().put("add di, 1 ;incrementa base");
+            this.assembly.getComandos().put("add cx, -1 ;decrementa contador");
+            this.assembly.getComandos().put("cmp cx, 0 ;verifica pilha vazia");
+            this.assembly.getComandos().put("jne " + rot2 + " ;se nao pilha vazia, loop");
+            this.assembly.getComandos().put("mov dl, 024h ;fim de string");
+            this.assembly.getComandos().put("mov ds:[di], dl ;grava '$'");
+            this.assembly.getComandos().put("mov dx, " + stringEnd);
+            this.assembly.getComandos().put("mov ah, 09h");
+            this.assembly.getComandos().put("int 21h");
+        }// End else
+
+        // RULE [45] {se Expressao.tipo != tipo-inteiro e Expressao.tipo != tipo-byte e Expressao.tipo != tipo-string}
+        if(!exp_tipo.equals("tipo-inteiro") && !exp_tipo.equals("tipo-byte") && !exp_tipo.equals("tipo-string")){
+            new Status(this.line + "\ntipos incompativeis.");
+        }// End if
 
         while(this.token.equals(",")){
             casaToken(",");
-            procedure_Expressao();
+
+            exp_tipo = procedure_Expressao();
+
+            if(Exp_tipo.equals("tipo_string")){
+                this.assembly.getComandos().put("mov dx, " + Exp_end);
+                this.assembly.getComandos().put("mov ah, 09h");
+                this.assembly.getComandos().put("int 21h");
+            }else{
+                this.assembly.getComandos().put("mov ax, DS:[" + Exp_end + "]");
+                this.assembly.getComandos().put("mov di, " + stringEnd + " ;end. string temp."); 
+                this.assembly.getComandos().put("mov cx, 0 ;contador");
+                this.assembly.getComandos().put("cmp ax,0 ;verifica sinal");
+                //String rot = rotulo.novoRotulo();
+                this.assembly.getComandos().put("jge " + rot + " ;salta se numero positivo");
+                this.assembly.getComandos().put("mov bl, 2Dh ;senao, escreve sinal ");
+                this.assembly.getComandos().put("mov ds:[di], bl");
+                this.assembly.getComandos().put("add di, 1 ;incrementa indice");
+                this.assembly.getComandos().put("neg ax ;toma modulo do numero");
+                this.assembly.getComandos().put(rot + ":");
+                this.assembly.getComandos().put("mov bx, 10 ;divisor"); 
+                //String rot1 = rotulo.novoRotulo();
+                this.assembly.getComandos().put(rot1 + ":");
+                this.assembly.getComandos().put("add cx, 1 ;incrementa contador");
+                this.assembly.getComandos().put("mov dx, 0 ;estende 32bits p/ div.");
+                this.assembly.getComandos().put("idiv bx ;divide DXAX por BX");
+                this.assembly.getComandos().put("push dx ;empilha valor do resto");  
+                this.assembly.getComandos().put("cmp ax, 0 ;verifica se quoc.  0");
+                this.assembly.getComandos().put("jne " + rot1 + " ;se nao  0, continua");              
+                //String rot2 = rotulo.novoRotulo();
+                this.assembly.getComandos().put(rot2 + ":");
+                this.assembly.getComandos().put("pop dx ;desempilha valor");
+                this.assembly.getComandos().put("add dx, 30h ;transforma em caractere");
+                this.assembly.getComandos().put("mov ds:[di],dl ;escreve caractere");
+                this.assembly.getComandos().put("add di, 1 ;incrementa base");
+                this.assembly.getComandos().put("add cx, -1 ;decrementa contador");
+                this.assembly.getComandos().put("cmp cx, 0 ;verifica pilha vazia");
+                this.assembly.getComandos().put("jne " + rot2 + " ;se nao pilha vazia, loop");
+                this.assembly.getComandos().put("mov dl, 024h ;fim de string");
+                this.assembly.getComandos().put("mov ds:[di], dl ;grava '$'");
+                this.assembly.getComandos().put("mov dx, " + stringEnd);
+                this.assembly.getComandos().put("mov ah, 09h");
+                this.assembly.getComandos().put("int 21h");
+            }// End else
+
+            // RULE [45] {se Expressao.tipo != tipo-inteiro e Expressao.tipo != tipo-byte e Expressao.tipo != tipo-string}
+            if(!exp_tipo.equals("tipo-inteiro") && !exp_tipo.equals("tipo-byte") && !exp_tipo.equals("tipo-string")){
+                new Status(this.line + "\ntipos incompativeis.");
+            }// End if
         }// End while
     }// End procedure_ListaExpressoes()
 
     public String procedure_Expressao(){
         // RULE [23] {Expressao.tipo = Exp.tipo}
         Expressao_tipo = procedure_Exp();
+         
+        // ASSEMBLY {Expressao.end = Exp1.end}
+        Expressao_end = // Exp1 ENDEREÇO
 
         if(this.token.equals("=") || this.token.equals("!=") || this.token.equals("<") || this.token.equals(">") || this.token.equals("<=") || this.token.equals(">=")){
             Expressao_tipo = procedure_E(Expressao_tipo);
@@ -1048,12 +1349,18 @@ class AnalisadorSintatico{
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
 
+            // ASSEMBLY [17.1] {Expressao.op =  “=”}
+            Expressao_op = "=";
+
             casaToken("=");
         }else if(token.equals("!=")){
             // RULE [30] {se Expressao.tipo = tipo-string entao ERRO}
             if(Expressao_tipo.equals("tipo-string")){
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
+
+            // ASSEMBLY [17.2] {Expressao.op =  “!=”}
+            Expressao_op = "!=";
 
             casaToken("!=");
         }else if(token.equals("<")){
@@ -1062,12 +1369,18 @@ class AnalisadorSintatico{
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
 
+            // ASSEMBLY [17.3] {Expressao.op =  “<”}
+            Expressao_op = "<";
+
             casaToken("<"); 
         }else if(token.equals(">")){
              // RULE [30] {se Expressao.tipo = tipo-string entao ERRO}
              if(Expressao_tipo.equals("tipo-string")){
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
+
+            // ASSEMBLY [17.4] {Expressao.op =  “>”}
+            Expressao_op = ">";
 
             casaToken(">");
         }else if(token.equals("<=")){
@@ -1076,12 +1389,18 @@ class AnalisadorSintatico{
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
 
+            // ASSEMBLY [17.5] {Expressao.op =  “<=”}
+            Expressao_op = "<=";
+
             casaToken("<=");
         }else{
              // RULE [30] {se Expressao.tipo = tipo-string entao ERRO}
              if(Expressao_tipo.equals("tipo-string")){
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
+
+            // ASSEMBLY [17.6] {Expressao.op =  “>=”}
+            Expressao_op = ">=";
 
             casaToken(">=");
         }// End else if
@@ -1101,18 +1420,101 @@ class AnalisadorSintatico{
          // RULE [41] {Expressao.tipo = tipo-lógico}
          Expressao_tipo = "tipo-lógico";
 
-         return Expressao_tipo;
+         /**
+          * [18]  { mov ax, DS:[Expressao.end]}
+                    mov bx, DS:{Exp2.end]
+                    cwd
+                    mov cx, DS:[ax]
+                    mov ax, DS[bx]
+                    cwd
+                    mov DS:[bx],ax
+                    mov DS:[ax],cx}
+                    {cmp ax, bx}
+                    { RotVerdadeiro = NovoRot }
+                    { se Exp.op = “=” então
+                        je RotVerdadeiro
+                    senao se Exp.op = “!=” então
+                        jne RotVerdadeiro
+                    senao se Exp.op = “<” então
+                        jl RotVerdadeiro
+                    senao se Exp.op = “>” então
+                        jg RotVerdadeiro
+                    senao se Exp.op = “>=” então
+                        jge RotVerdadeiro
+                    senao
+                        jle RotVerdadeiro }
+                    { mov al, 0 }
+                    { RotFim = NovoRot }
+                    { jmp RotFim }
+                    { RotVerdadeiro: }
+                    { mov AL, 0FFh }
+                    { RotFim: }
+                    { Exp.end:=NovoTemp }
+                    { Exp.tipo:=tipo-lógico }
+                    { mov Exp.end, AL }
+          */
+          this.assembly.getComandos().put("mov ax, DS:[      Expressao.end      ]");
+          this.assembly.getComandos().put("mov bx, DS:{       Exp2.end      ]");
+          this.assembly.getComandos().put("cwd");
+          this.assembly.getComandos().put("mov DS:[bx],ax");
+          this.assembly.getComandos().put("mov DS:[ax],cx");
+
+          this.assembly.getComandos().put("cmp ax, bx");
+          // RotVerdadeiro = NovoRot
+
+          if(Exp_op.equals("=")){
+            this.assembly.getComandos().put("je RotVerdadeiro");
+          }else if(Exp_op.equals("!=")){    
+            this.assembly.getComandos().put("jne RotVerdadeiro");
+          }else if(Exp_op.equals("<")){
+            this.assembly.getComandos().put("jl RotVerdadeiro");
+          }else if(Exp_op.equals(">")){
+            this.assembly.getComandos().put("jg RotVerdadeiro");
+          }else if(Exp_op.equals(">=")){
+            this.assembly.getComandos().put("jge RotVerdadeiro");
+          }else{
+            this.assembly.getComandos().put("jle RotVerdadeiro");
+          }// End else
+          this.assembly.getComandos().put("mov al, 0");
+          // RotFim = NovoRot
+          this.assembly.getComandos().put("jmp           RotFim");
+          this.assembly.getComandos().put("RotVerdadeiro          :");
+          this.assembly.getComandos().put("mov al, 0FFh");
+          this.assembly.getComandos().put("RotFim     :");
+          Expressao_end = //NovoTemp
+          Expressao_tipo = "tipo-lógico";
+          this.assembly.getComandos().put("mov "+Expressao_end+",al");
+          return Expressao_tipo;
     }// End procedure_E()
 
     public String procedure_Exp(){
+        boolean expnegado = false;
+
         if(this.token.equals("-")){
             casaToken("-");
-        }else if(this.token.equals("+")){
-            casaToken("+");
-        }// End else
+
+            // ASSEMBLY [12] {Exp.negado = true}
+            expnegado = true;
+        }// End if
 
         // RULE [24] {Exp.tipo = T.tipo}
         Exp_tipo = procedure_T();
+
+        /**
+         * [13] {se Exp.negado = true
+          	     Exp.end = NovoTemp
+     	         mov ax, DS:[T1.end]
+          	     neg ax
+          	     mov DS:[Exp.end], ax}
+                 {Exp.end = T1.end}
+         */
+        if(expnegado){
+            // Exp.endereço = NovoTemp
+            this.assembly.getComandos().put("mov ax, DS:["+"T1 ENDEREÇO"+"]");
+            this.assembly.getComandos().put("neg ax");
+            this.assembly.getComandos().put("mov DS:["+"Exp ENDEREÇO"+"]");
+        }// Endif
+        Exp_end = //T1 ENDEREÇO
 
         while(this.token.equals("+") || this.token.equals("-") || this.token.equals("||")){
             Exp_tipo = procedure_D(Exp_tipo);
@@ -1132,7 +1534,10 @@ class AnalisadorSintatico{
               if(!Exp_tipo.equals("tipo-string") && !Exp_tipo.equals("tipo-inteiro") && 
                  !Exp_tipo.equals("tipo-lógico") && !Exp_tipo.equals("tipo-byte")){
                  new Status(this.line + "\ntipos incompativeis.");
-              }// End if   
+              }// End if
+              
+              // ASSEMBLY [14.1] {Exp.operador = +}
+              Exp_op = "+";
 
             casaToken("+");
         }else if(this.token.equals("-")){
@@ -1140,13 +1545,19 @@ class AnalisadorSintatico{
             if(Exp_tipo.equals("tipo-string")){
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
-            
+
+            // ASSEMBLY [14.2] {Exp.operador = -}
+            Exp_op = "-";
+        
             casaToken("-");
         }else{
             // RULE [31] {se Exp.tipo = tipo-string entao ERRO}
             if(Exp_tipo.equals("tipo-string")){
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
+
+            // ASSEMBLY [14.3] {Exp.operador = ||}
+            Exp_op = "||";
 
             casaToken("||");
         }// End else if
@@ -1169,13 +1580,58 @@ class AnalisadorSintatico{
               T2_tipo.equals("tipo-inteiro"))){
               Exp_tipo = "tipo-inteiro";
           }// End if
+
+          /**
+           * ASSEMBLY [15] {mov ax, DS:[Exp.end]
+                            mov bx, DS:[T2.end]
+                            se Exp.tipo != tipo-inteiro entao
+	                        cwd 
+                            se T2.tipo != tipo-inteiro entao
+                            mov cx, DS:[ax]
+                            mov ax, DS:[bx]
+                            cwd 
+                            mov DS:[bx], ax
+                            mov DS:[ax], cx}
+                            se Exp.op = “+” então
+                            add
+                            senao se Exp.op = “-” então
+                            sub
+                            senao 
+                            and          
+                            Exp.end = NovoTemp
+                            mov DS:[Exp.end], ax 
+           */
+           this.assembly.getComandos().put("mov ax, DS:["+"ENDEREÇO DE Exp"+"]");
+           this.assembly.getComandos().put("mov bx, DS:["+"ENDEREÇO DE T2"+"]");
+           if(!Exp_tipo.equals("tipo-inteiro")){
+                this.assembly.getComandos().put("cwd");
+           }// End if
+           if(!T2_tipo.equals("tipo-inteiro")){
+                this.assembly.getComandos().put("mov cx, DS:[ax]");
+                this.assembly.getComandos().put("mov ax, DS:[bx]");
+                this.assembly.getComandos().put("cwd");
+                this.assembly.getComandos().put("mov DS:[bx], ax");
+                this.assembly.getComandos().put("mov DS:[ax], cx");
+           }// End if
+           if(Exp_op.equals("+")){
+                this.assembly.getComandos().put("add ax,bx");
+           }else if(Exp_op.equals("-")){
+                this.assembly.getComandos().put("sub ax,bx");
+           }else{
+                this.assembly.getComandos().put("");
+           }// End else
           return Exp_tipo;
+          Exp_end = //NovoTemp
+          this.assembly.getComandos().put("mov DS:["+Exp_end+"],ax");
     }// End procedure_D()
 
     public String procedure_T(){
 
         // RULE [25] {T.tipo = F.tipo}
         T_tipo = procedure_F();
+
+        // ASSEMBLY [9] {T.end = F1.end}
+        T_end = // ENDEREÇO DE F1 
         
         while(this.token.equals("*") || this.token.equals("&&") || this.token.equals("/")){
             T_tipo = procedure_precedenciaC(T_tipo);
@@ -1194,6 +1650,9 @@ class AnalisadorSintatico{
             if(T_tipo.equals("tipo-string")){
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
+
+            // ASSEMBLY [10.1] {T.operador = *}
+            T_op = "*";
             
             casaToken("*");
         }else if(this.token.equals("&&")){
@@ -1202,6 +1661,9 @@ class AnalisadorSintatico{
             if(T_tipo.equals("tipo-string")){
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
+
+            // ASSEMBLY [10.2] {T.operador = &&]
+            T_op = "&&";
 
             casaToken("&&");
         }else{
@@ -1216,18 +1678,22 @@ class AnalisadorSintatico{
                 T_tipo = "tipo-inteiro";
                 T_isdiv = true;
             }// End if
+
+            // ASSEMBLY [10.3] {T.operador = /]
+            T_op = "/";
+
             casaToken("/");
         }// End else if
 
         String F2_aux = procedure_F();
 
         /**
-         * [38] {se F1.tipo != F2.tipo e (F1.tipo != tipo-inteiro e F2.tipo != 
-         * tipo-byte e F1.tipo != tipo-byte e F2.tipo != tipo-inteiro) entao ERRO}
+         * [38] {se T.tipo != F2.tipo e (T.tipo != tipo-inteiro e F2.tipo != 
+         * tipo-byte ou T.tipo != tipo-byte e F2.tipo != tipo-inteiro) entao ERRO}
          */
         if(!F1_tipo.equals(F2_aux) && (!F1_tipo.equals("tipo-inteiro") && 
-           !F2_aux.equals("tipo-byte")) && (!F1_tipo.equals("tipo-byte") && !F2_aux.equals("tipo-inteiro"))){
-            new Status(this.line + "\ntipos incompativeis.");
+           !F2_aux.equals("tipo-byte")) || (!F1_tipo.equals("tipo-byte") && !F2_aux.equals("tipo-inteiro"))){
+                new Status(this.line + "\ntipos incompativeis.");
         }// End if
 
 
@@ -1240,6 +1706,48 @@ class AnalisadorSintatico{
              T_tipo = "tipo-inteiro";
          }// End if
 
+          /**
+           * [15] {mov ax, DS:[T.end]}
+                  {mov bx, DS:[F2.end]}
+                  {se T.tipo != tipo-inteiro entao
+	               cwd 
+                   se F2.tipo != tipo-inteiro entao
+	               mov cx, DS:[ax]
+	               mov ax, DS:[bx]
+	               cwd 
+	               mov DS:[bx], ax
+	               mov DS:[ax], cx}
+                   se T.op = “*” então
+		           add
+                   senao se T.op = “&&” então
+	               sub
+                   senao 
+	               and          
+                   Exps.end = NovoTemp
+                   mov DS:[Exps.end], ax 
+           */
+          this.assembly.getComandos().put("mov ax, DS:["+"ENDEREÇO T"+"]");
+          this.assembly.getComandos().put("mox bx, DS:["+ "ENDEREÇO DE F2" +"]");
+          if(!T_tipo.equals("tipo-inteiro")){
+              this.assembly.getComandos().put("cwd");
+          }// Endif
+          if(F2_aux.equals("tipo-inteiro")){
+            this.assembly.getComandos().put("mov cx, DS:[ax]");
+            this.assembly.getComandos().put("mov ax, DS:[bx]");
+            this.assembly.getComandos().put("cwd");
+            this.assembly.getComandos().put("mov DS:[bx],ax");
+            this.assembly.getComandos().put("mov DS:[ax],cx");
+          }// End if
+          if(T_op.equals("*")){
+            this.assembly.getComandos().put("imul bx");
+          }else if(T_op.equals("&&")){ 
+            this.assembly.getComandos().put("");
+          }else{
+            this.assembly.getComandos().put("idiv bx");
+          }// End else
+          // Exps.end = NovoTemp
+          // mov DS:[Exps.end], ax 
+
          return T_tipo;
     }// End procedure_precedenciaC()
 
@@ -1250,12 +1758,27 @@ class AnalisadorSintatico{
             // RULE [26] {F.tipo = F1.tipo}
             F_tipo = procedure_F();
 
+            /**
+             * [8] {F.end = NovoTemp
+             *      mov regA, F1.end
+             *      neg regA
+             *      add regA, 1
+             *      mov F.end, regA}
+             */
+             F_end = //NovoTemp
+             this.assembly.getComandos().put("mov ax, ENDEREÇO F1");
+             this.assembly.getComandos().put("neg ax");
+             this.assembly.getComandos().put("add ax,1");
+             this.assembly.getComandos().put("mov ENDEREÇO F,ax");
         }else if(this.token.equals("(")){
             casaToken("(");
 
             // RULE [27] {F.tipo = Expressao.tipo}
             F_tipo = procedure_Expressao();
             
+            // ASSEMBLY [7] {F.end = Expressao.end}
+            F_end = //ENDEREÇO EXPRESSAO
+
             casaToken(")");
         }else if(this.token.equals("id")){
 
@@ -1269,6 +1792,9 @@ class AnalisadorSintatico{
 
             // RULE [29] {F.tipo = id.tipo}
             F_tipo = id_aux.getTipo();
+
+            // ASSEMBLY [5] {F.end = id.end}
+            F_end = id_aux.getEndereco();
 
         }else if(this.token.equals("-")){
             // RULE [13] {F.isnegativo = true}
@@ -1296,6 +1822,31 @@ class AnalisadorSintatico{
             
            // RULE [28] {F.tipo = const.tipo}
            F_tipo = const_aux.getTipo();
+
+           /**
+            * [6] {se const.tipo = tipo-string entao 
+	        *          dseg SEGMENT PUBLIC
+	        *          byte “const.lexema$”
+	        *          dseg ENDS
+	        *          F.end = contator_dados
+            *          contator_dados += 256
+            *       senao
+	        *          F.end = NovoTemp
+		    *          mov regA, const.lexema
+		    *          mov F.end, regA}
+            */
+            if(const_aux.getTipo().equals("tipo-string")){
+                this.assembly.getComandos().put("dseg SEGMENT PUBLIC ; inicio da segmentacao");
+                String constant = const_aux.getLexema().replace("\"","");
+                this.assembly.getComandos().put("byte "+constant+"$ ; declaração string");
+                this.assembly.getComandos().put("dseg ENDS");
+                //F.end = contator_dados
+                //contator_dados += 256
+            }else{
+                // F.end = NovoTemp
+                this.assembly.getComandos().put("mov ax,"+const_aux.getLexema()+" ; constante "+const_aux.getLexema());
+                this.assembly.getComandos().put("mov ENDEREÇO DE F,ax");
+            }// End else
 
         }else{
 
@@ -1326,36 +1877,26 @@ class AnalisadorSintatico{
     }// End procedure_F()
 }// End AnalisadorSintatico()
 
-class Assembly{
-    private ArrayList<String> declaracoes;
+public class Assembly{
+    private ArrayList<String> declaracao; 
     private ArrayList<String> comandos;
-    private BufferedWrite fonteAssembly;
+    private BufferedWriter bufferedWriter;
+
+    public ArrayList<String> getDeclaracao(){ return this.declaracao;}// End getDeclaracao()
+    public void setDeclaracao(ArrayList<String> declaracao){ this.declaracao = declaracao;}// End setDeclaracao()
+    public ArrayList<String> getComandos(){ return this.comandos;}// End getComandos()
+    public void setComandos(ArrayList<String> comandos){ this.comandos = comandos;}// End setComandos()
 
     public Assembly(){
-        this.assembly = new ArrayList<>();
-        this.fonteAssembly = new BufferedWriter(new FileWrite("c:/8086/fonte.asm"));
-    }//End Assembly()
+        this.bufferedWriter = new BufferedWriter("c:/8086/codigo.asm"); 
+        this.declaracao = new ArrayList<>(0);
+        this.comandos = new ArrayList<>(0);
+    }// End Assembly()
 
-    public ArrayList<String> getComandos(){
-        return this.comandos;
-    }// End getComandos();
-
-    public void setComandos(ArrayList<String> comandos){
-        this.comandos = comandos;
-    }// End setComandos()
-    
-    public ArrayList<String> getDeclaracoes(){
-        return this.declaracoes;
-    }// End getDeclaracoes();
-
-    public void setDeclaracoes(ArrayList<String> declaracoes){
-        this.declaracoes= declaracoes;
-    }// End setDeclaracoes()
-
-    public getAssemblySource(){
+    public void getAssembly(){
 
     }// End getAssembly()
-}// End Assembly
+}// End class Assembly
 
 /**
  * @author Vinicius Silva
@@ -1385,10 +1926,11 @@ public class LC{
         getBuffer(); // Recebe e joga a entrada em um buffer
 
         try{                                 
+        
             analisadorLexico = new AnalisadorLexico(new FileReader(FILE_NAME),line,readskip);                          
             lexeme = analisadorLexico.analiseLexica();
             setValues(); // Seta a quantidade de caracteres a serem pulados e o valor da linha
-            analisadorSintatico = new AnalisadorSintatico(FILE_NAME,readskip,line,analisadorLexico.getSymbolTable());
+            analisadorSintatico = new AnalisadorSintatico(FILE_NAME,readskip,line,analisadorLexico.getSymbolTable());   
             analisadorSintatico.setToken(lexeme.getToken());
             analisadorSintatico.setLexema(lexeme.getLexema());
             analisadorSintatico.procedure_S();  

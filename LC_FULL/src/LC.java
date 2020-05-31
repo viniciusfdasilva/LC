@@ -696,14 +696,14 @@ class AnalisadorSintatico{
                 casaToken("-");
             }// End if
 
-            // RULE [15] {se Declarar.isnegativo = true entao id.tipo = tipo-inteiro}
-            if(Declarar_isnegativo){
-                id_aux.setTipo("tipo-inteiro");
-            }// End if
-
             Symbol const_aux = this.symbol;
             casaToken("const");
             
+            //[15] {se Declarar.isnegativo = true entao const.tipo = tipo-inteiro}
+            if(Declarar_isnegativo){
+                const_aux.setTipo("tipo-inteiro");
+            }// End if
+
             /**
              * RULE [21] {se const.tipo != tipo-string e const.tipo != tipo-lógico e 
              * const.tipo != NULO e const.lexema >= 0 e const.lexema <= 255 entao 
@@ -726,11 +726,8 @@ class AnalisadorSintatico{
             }// End if
 
             // RULE [22] {se id.tipo == NULO entao id.tipo = const.tipo senaose id.tipo != const.tipo entao ERRO}
-            if(id_aux.getTipo().equals("")){
-                id_aux.setTipo(const_aux.getTipo());
-            }else if(!id_aux.getTipo().equals(const_aux.getTipo())){
-                new Status(this.line + "\ntipos incompativeis.");
-            }// End else
+        
+            id_aux.setTipo(const_aux.getTipo());
 
             casaToken(";");
         }else{
@@ -779,7 +776,7 @@ class AnalisadorSintatico{
     public void procedure_ListaIds(String Listaids_tipo, String Listaids_classe ,String lex){
         if(this.token.equals("<-")){
             if(Listaids_classe.equals("classe-const")){
-                new Status(this.line + "\nclasse de identificador incompatível ["+ lex +"].");
+                new Status(this.line + "\nclasse de identificador incompativel ["+ lex +"].");
             }// End if
 
             // RULE [19] {Atrib.tipo = Listaids.tipo}
@@ -803,7 +800,7 @@ class AnalisadorSintatico{
 
             if(this.token.equals("<-")){
                 if(id_aux.getClasse().equals("classe-const")){
-                    new Status(this.line + "\nclasse de identificador incompatível ["+ id_aux.getLexema() +"].");
+                    new Status(this.line + "\nclasse de identificador incompativel ["+ id_aux.getLexema() +"].");
                 }// End if
                 
                 // RULE [17] {Atrib.tipo = id.tipo}
@@ -878,7 +875,7 @@ class AnalisadorSintatico{
 
         // RULE [4] {se id.classe != classe-var entao ERRO}
         if(!id_aux.getClasse().equals("classe-var")){
-            new Status(this.line + "\nclasse de identificador incompatível ["+ id_aux.getLexema() +"].");
+            new Status(this.line + "\nclasse de identificador incompativel ["+ id_aux.getLexema() +"].");
         }// End if
 
         casaToken("<-");
@@ -976,6 +973,11 @@ class AnalisadorSintatico{
             new Status(this.line + "\nidentificador nao declarado ["+ id_aux.getLexema() +"].");
         }// End if
 
+        // RULE [4] {se id.classe != classe-var entao ERRO}
+        if(!id_aux.getClasse().equals("classe-var")){
+            new Status(this.line + "\nclasse de identificador incompativel ["+ id_aux.getLexema() +"].");
+        }// End if
+
         // RULE [44] {se id.tipo != tipo-byte e id.tipo != tipo-inteiro e tipo.tipo != tipo-string}
         if(!id_aux.getTipo().equals("tipo-byte") && !id_aux.getTipo().equals("tipo-inteiro") && !id_aux.getTipo().equals("tipo-string")){
             System.out.println(id_aux.getTipo());
@@ -1003,11 +1005,22 @@ class AnalisadorSintatico{
     }// End procedure_Escrita()
 
     public void procedure_ListaExpressoes(){
-        procedure_Expressao();
+        String exp_tipo = procedure_Expressao();
+
+        // RULE [45] {se Expressao.tipo != tipo-inteiro e Expressao.tipo != tipo-byte e Expressao.tipo != tipo-string}
+        if(!exp_tipo.equals("tipo-inteiro") && !exp_tipo.equals("tipo-byte") && !exp_tipo.equals("tipo-string")){
+            new Status(this.line + "\ntipos incompativeis.");
+        }// End if
 
         while(this.token.equals(",")){
             casaToken(",");
-            procedure_Expressao();
+
+            exp_tipo = procedure_Expressao();
+            
+            // RULE [45] {se Expressao.tipo != tipo-inteiro e Expressao.tipo != tipo-byte e Expressao.tipo != tipo-string}
+            if(!exp_tipo.equals("tipo-inteiro") && !exp_tipo.equals("tipo-byte") && !exp_tipo.equals("tipo-string")){
+                new Status(this.line + "\ntipos incompativeis.");
+            }// End if
         }// End while
     }// End procedure_ListaExpressoes()
 
@@ -1207,12 +1220,12 @@ class AnalisadorSintatico{
         String F2_aux = procedure_F();
 
         /**
-         * [38] {se F1.tipo != F2.tipo e (F1.tipo != tipo-inteiro e F2.tipo != 
-         * tipo-byte e F1.tipo != tipo-byte e F2.tipo != tipo-inteiro) entao ERRO}
+         * [38] {se T.tipo != F2.tipo e (T.tipo != tipo-inteiro e F2.tipo != 
+         * tipo-byte ou T.tipo != tipo-byte e F2.tipo != tipo-inteiro) entao ERRO}
          */
         if(!F1_tipo.equals(F2_aux) && (!F1_tipo.equals("tipo-inteiro") && 
-           !F2_aux.equals("tipo-byte")) && (!F1_tipo.equals("tipo-byte") && !F2_aux.equals("tipo-inteiro"))){
-            new Status(this.line + "\ntipos incompativeis.");
+           !F2_aux.equals("tipo-byte")) || (!F1_tipo.equals("tipo-byte") && !F2_aux.equals("tipo-inteiro"))){
+                new Status(this.line + "\ntipos incompativeis.");
         }// End if
 
 
