@@ -775,7 +775,7 @@ class AnalisadorSintatico{
 
     public void procedure_ListaIds(String Listaids_tipo, String Listaids_classe ,String lex){
         if(this.token.equals("<-")){
-            if(Listaids_classe.equals("classe-const")){
+            if(Listaids_classe.equals("classe-const")){                
                 new Status(this.line + "\nclasse de identificador incompativel ["+ lex +"].");
             }// End if
 
@@ -980,7 +980,6 @@ class AnalisadorSintatico{
 
         // RULE [44] {se id.tipo != tipo-byte e id.tipo != tipo-inteiro e tipo.tipo != tipo-string}
         if(!id_aux.getTipo().equals("tipo-byte") && !id_aux.getTipo().equals("tipo-inteiro") && !id_aux.getTipo().equals("tipo-string")){
-            System.out.println(id_aux.getTipo());
             new Status(this.line + "\ntipos incompativeis.");
         }// End if
 
@@ -1305,6 +1304,7 @@ class AnalisadorSintatico{
              * const.tipo = tipo-byte else const.tipo = tipo-inteiro}
              */
             String tipo = const_aux.getTipo();
+            casaToken("const");
 
             if(!tipo.equals("tipo-string") && !tipo.equals("tipo-lógico") && tipo.equals("")){
                 int constant = Integer.parseInt(const_aux.getLexema());
@@ -1317,8 +1317,6 @@ class AnalisadorSintatico{
 
            // RULE [28] {F.tipo = const.tipo}
            F_tipo = const_aux.getTipo();
-
-            casaToken("const");
         }// End else if
         return F_tipo;
     }// End procedure_F()

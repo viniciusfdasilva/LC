@@ -3,6 +3,8 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.io.InputStreamReader;
 import java.io.FileWriter;
 import java.nio.charset.*;
@@ -575,6 +577,8 @@ class AnalisadorSintatico{
     private String lexema;
     private Symbol symbol;
     private Assembly assembly;
+    private GerenciadorMemoria gerenciadorMemoria;
+    private Rotulo rotulo;
 
     // Atributos das Regras de derivação
     private boolean Declarar_isnegativo;
@@ -586,13 +590,16 @@ class AnalisadorSintatico{
     private boolean F_isnegativo;
     private String F_tipo;
 
-    private String F_end;
-    private String T_end;
-    private String Exp_end;
-    private String Expressao_end;
+
+    private byte F_end;
+    private byte T_end;
+    private byte Exp_end;
+    private byte Expressao_end;
     private String T_op;
     private String Exp_op;
     private String Expressao_op;
+
+    private byte end;
 
     private long readSkip;
     private int line;
@@ -608,7 +615,11 @@ class AnalisadorSintatico{
         this.symbol = null;
         this.ts = ts;
         this.memoria_count = 0;
+        
         this.assembly = new Assembly();
+        this.gerenciadorMemoria = new GerenciadorMemoria();
+        this.rotulo = new Rotulo();
+        this.end = this.gerenciadorMemoria.contador;
     }// End AnalisadorSintatico()
 
     public long getReadSkip(){
@@ -682,6 +693,13 @@ class AnalisadorSintatico{
         }// End while
 
         casaToken("EOF");
+
+        try{
+            assembly.getAssembly();
+        }catch(IOException e){
+            e.printStackTrace();
+            System.exit(0);
+        }// End catch
     }// End procedure_S()x
 
     public void procedure_Declarar(){
@@ -740,19 +758,27 @@ class AnalisadorSintatico{
             id_aux.setTipo(const_aux.getTipo());
 
             /**
-             * ASSEMBLY [1] {se Declarar.isnegativo = true assembly.getDeclaracoes().put("sword ");
-             *               senao se const.tipo = tipo-string assembly.getDeclaracoes().put("sword ");
-             *               senao se const.tipo = tipo-lógico assembly.getDeclaracoes().put("sword ");}
+             * ASSEMBLY [1] {se const.tipo = tipo-inteiro assembly.getDeclaracoes().put("sword const.lex");
+             *               senao se const.tipo = tipo-string assembly.getDeclaracoes().put("byte const.lex+$");
+             *               senao se const.tipo = byte assembly.getDeclaracoes().put("byte const.lex"); 
+             *              senao se const.tipo = tipo-lógico assembly.getDeclaracoes().put("sword const.lex");}
              */
-            if(const_aux.setTipo("tipo-inteiro")){
-                this.assembly.getDeclaracao().put("sword "+const_aux.getLexema()+"; int em "+"ESCREVER ENDEREÇO");
+            if(const_aux.getTipo().equals("tipo-inteiro")){
+                end = gerenciadorMemoria.newEndInt();
+                this.assembly.getDeclaracao().add("sword "+const_aux.getLexema()+"; int em "+end);
             }else if(const_aux.getTipo().equals("tipo-string")){
                 const_aux.setLexema(const_aux.getLexema().replace("\"",""));
-                this.assembly.getDeclaracao().put("byte "+const_aux.getLexema()+"$"+" ; string em "+"ESCREVER ENDEREÇO");
+                end = gerenciadorMemoria.newEndString(const_aux.getLexema().length());
+                this.assembly.getDeclaracao().add("byte "+const_aux.getLexema()+"$"+" ; string em "+end);
+            }else if(const_aux.getTipo().equals("tipo-byte")){
+                end = gerenciadorMemoria.newEndByte();
+                this.assembly.getDeclaracao().add("byte "+const_aux.getLexema()+" ; byte em "+end);
             }else{
-                this.assembly.getDeclaracao().put("byte "+const_aux.getLexema()+" ; boolean em "+"ESCREVER ENDEREÇO");
+                end = gerenciadorMemoria.newEndBoolean();
+                this.assembly.getDeclaracao().add("byte "+const_aux.getLexema()+" ; boolean em "+end);
             }// End else
 
+            id_aux.setEndereco(end);
             casaToken(";");
         }else{
             if(this.token.equals("int")){
@@ -792,12 +818,16 @@ class AnalisadorSintatico{
 
 
             // RULE [18] {Listaids.tipo = id.tipo}
-            procedure_ListaIds(id_aux.getTipo(),id_aux.getClasse(),id_aux.getLexema());
+            procedure_ListaIds(id_aux);
             casaToken(";");
         }// End else
     }// End procedure_Declarar()
 
-    public void procedure_ListaIds(String Listaids_tipo, String Listaids_classe ,String lex){
+    public void procedure_ListaIds(Symbol id){
+        String Listaids_tipo = id.getTipo();
+        String lex = id.getLexema();
+        String Listaids_classe = id.getClasse();
+
         boolean ListaIds_isatribuicao = false;
         if(this.token.equals("<-")){
             if(Listaids_classe.equals("classe-const")){
@@ -805,14 +835,14 @@ class AnalisadorSintatico{
             }// End if
 
             // RULE [19] {Atrib.tipo = Listaids.tipo}
-            procedure_Atrib(Listaids_tipo);
+            procedure_Atrib(id);
 
             // ASSEMBLY [2] {ListaIds.isatribuicao = true}
             ListaIds_isatribuicao = true;
         }// End if
 
         /**
-         * [3] {se ListaIds.isatribuicao = false se ListaIds.tipo = tipo-inteiro 
+         * ASSEMBLY [3] {se ListaIds.isatribuicao = false se ListaIds.tipo = tipo-inteiro 
 	            assembly.getDeclaracoes().put("sword ?"); senao se ListsIds.tipo = tipo-byte
 	            assembly.getDeclaracoes().put("byte ?"); senao se ListaIds.tipo = tipo-string
 	            assembly.getDeclaracoes().put("byte ?"); senao se Lista.tipo = tipo-lógico
@@ -820,15 +850,21 @@ class AnalisadorSintatico{
          */
         if(!ListaIds_isatribuicao){
             if(Listaids_tipo.equals("tipo-inteiro")){
-                this.assembly.getDeclaracao().put("sword ?");
+                end = gerenciadorMemoria.newEndInt();
+                this.assembly.getDeclaracao().add("sword ?");
             }else if(Listaids_tipo.equals("tipo-byte")){
-                this.assembly.getDeclaracao().put("byte ?");
+                end = gerenciadorMemoria.newEndByte();
+                this.assembly.getDeclaracao().add("byte ?");
             }else if(Listaids_tipo.equals("tipo-string")){
-                this.assembly.getDeclaracao().put("byte ?");
+                end = gerenciadorMemoria.newEndString();
+                this.assembly.getDeclaracao().add("byte ?");
             }else{
-                this.assembly.getDeclaracao().put("byte ?");
+                end = gerenciadorMemoria.newEndBoolean();
+                this.assembly.getDeclaracao().add("byte ?");
             }// End else
         }// End if
+
+        id.setEndereco(end);
         ListaIds_isatribuicao = false;
 
         while(this.token.equals(",")){
@@ -852,34 +888,41 @@ class AnalisadorSintatico{
                 }// End if
                 
                 // RULE [17] {Atrib.tipo = id.tipo}
-                procedure_Atrib(id_aux.getTipo());
+                procedure_Atrib(id_aux);
 
                 // ASSEMBLY [2] {ListaIds.isatribuicao = true}
                 ListaIds_isatribuicao = true;
             }// End if
 
              /**
-                 * ASSEMBLY [3] {se ListaIds.isatribuicao = false se ListaIds.tipo = tipo-inteiro 
-                    assembly.getDeclaracoes().put("sword ?"); senao se ListsIds.tipo = tipo-byte
-                    assembly.getDeclaracoes().put("byte ?"); senao se ListaIds.tipo = tipo-string
-                    assembly.getDeclaracoes().put("byte ?"); senao se Lista.tipo = tipo-lógico
-                    assembly.getDeclaracoes().put("byte ? ");}
+             * ASSEMBLY [3] {se ListaIds.isatribuicao = false se ListaIds.tipo = tipo-inteiro 
+                 assembly.getDeclaracoes().put("sword ?"); senao se ListsIds.tipo = tipo-byte
+                assembly.getDeclaracoes().put("byte ?"); senao se ListaIds.tipo = tipo-string
+                assembly.getDeclaracoes().put("byte ?"); senao se Lista.tipo = tipo-lógico
+                assembly.getDeclaracoes().put("byte ? ");}
             */
             if(!ListaIds_isatribuicao){
                 if(Listaids_tipo.equals("tipo-inteiro")){
-                    this.assembly.getDeclaracao().put("sword ?");
+                    end = gerenciadorMemoria.newEndInt();
+                    this.assembly.getDeclaracao().add("sword ?");
                 }else if(Listaids_tipo.equals("tipo-byte")){
-                    this.assembly.getDeclaracao().put("byte ?");
+                    end = gerenciadorMemoria.newEndByte();
+                    this.assembly.getDeclaracao().add("byte ?");
                 }else if(Listaids_tipo.equals("tipo-string")){
-                    this.assembly.getDeclaracao().put("byte ?");
+                    end = gerenciadorMemoria.newEndString();
+                    this.assembly.getDeclaracao().add("byte ?");
                 }else{
-                    this.assembly.getDeclaracao().put("byte ?");
+                    end = gerenciadorMemoria.newEndBoolean();
+                    this.assembly.getDeclaracao().add("byte ?");
                 }// End else
-            }// End if"
+            }// End if
+            
+            id.setEndereco(end);
         }// End while
     }// End procedure_ListaIds()
 
-    public void procedure_Atrib(String Atrib_tipo){
+    public void procedure_Atrib(Symbol id){
+        String Atrib_tipo = id.getTipo();
         casaToken("<-");
         if(this.token.equals("-")){
             // RULE [12] {Atrib.isnegativo = true}
@@ -917,19 +960,28 @@ class AnalisadorSintatico{
             new Status(this.line + "\ntipos incompativeis.");
         }// End if
 
-        /**
-         * ASSEMBLY [1] {se Declarar.isnegativo = true assembly.getDeclaracoes().put("sword ");
-         *               senao se const.tipo = tipo-string assembly.getDeclaracoes().put("sword ");
-         *               senao se const.tipo = tipo-lógico assembly.getDeclaracoes().put("sword ");}
-         */
-        if(const_aux.setTipo("tipo-inteiro")){
-            this.assembly.getDeclaracao().put("sword "+const_aux.getLexema()+"; int em "+"ESCREVER ENDEREÇO");
-        }else if(const_aux.getTipo().equals("tipo-string")){
-            const_aux.setLexema(const_aux.getLexema().replace("\"",""));
-            this.assembly.getDeclaracao().put("byte "+const_aux.getLexema()+"$"+" ; string em "+"ESCREVER ENDEREÇO");
-        }else{
-            this.assembly.getDeclaracao().put("byte "+const_aux.getLexema()+" ; boolean em "+"ESCREVER ENDEREÇO");
-        }// End else
+            /**
+             * ASSEMBLY [1] {se const.tipo = tipo-inteiro assembly.getDeclaracoes().put("sword const.lex");
+             *               senao se const.tipo = tipo-string assembly.getDeclaracoes().put("byte const.lex+$");
+             *               senao se const.tipo = byte assembly.getDeclaracoes().put("byte const.lex"); 
+             *              senao se const.tipo = tipo-lógico assembly.getDeclaracoes().put("sword const.lex");}
+             */
+            if(const_aux.getTipo().equals("tipo-inteiro")){
+                end = gerenciadorMemoria.newEndInt();
+                this.assembly.getDeclaracao().add("sword "+const_aux.getLexema()+"; int em "+end);
+            }else if(const_aux.getTipo().equals("tipo-string")){
+                const_aux.setLexema(const_aux.getLexema().replace("\"",""));
+                end = gerenciadorMemoria.newEndString(const_aux.getLexema().length());
+                this.assembly.getDeclaracao().add("byte "+const_aux.getLexema()+"$"+" ; string em "+end);
+            }else if(const_aux.getTipo().equals("tipo-byte")){
+                end = gerenciadorMemoria.newEndByte();
+                this.assembly.getDeclaracao().add("byte "+const_aux.getLexema()+" ; byte em "+end);
+            }else{
+                end = gerenciadorMemoria.newEndBoolean();
+                this.assembly.getDeclaracao().add("byte "+const_aux.getLexema()+" ; boolean em "+end);
+            }// End else
+
+            id.setEndereco(end);
     }// End procedure_Atrib()
 
     public void procedure_Comando(){
@@ -972,15 +1024,15 @@ class AnalisadorSintatico{
         }// End if
 
         /**
-         * [4] {mov ax, DS: [Expressao.end]}
+         *     ASSEMBLY [4] {mov ax, DS: [Expressao.end]}
          *     {se id.tipo != Expressao.tipo entao  cwd}
-         *     {mov DS:[id.end], ax}?
+         *     {mov DS:[id.end], ax}
          */
-          this.assembly.getComandos().put("mov ax, DS:["+ " ENDEREÇO DA EXPRESSÃO " +"] ; movimentar o valor da expressao para ax");
+          this.assembly.getComandos().add("mov ax, DS:["+ Expressao_end +"] ; movimentar o valor da expressao para ax");
           if(!id_aux.getTipo().equals(Expressao_aux)){
-            this.assembly.getComandos().put("cwd ; casting");
+            this.assembly.getComandos().add("cwd ; casting");
           }// End if
-          this.assembly.getComandos().put("mov DS:["+id_aux.getEndereco()+"],ax");
+          this.assembly.getComandos().add("mov DS:["+id_aux.getEndereco()+"],ax");
 
         casaToken(";");
     }// End procedure_Atribuicao()
@@ -989,25 +1041,26 @@ class AnalisadorSintatico{
         casaToken("while");
 
         /**
-         * [23] {RotInicio = NovoRot}
-                {RotFim = NovoRot}
-                {RotInicio:}
+         * ASSEMBLY [23] {RotInicio = NovoRot}
+                         {RotFim = NovoRot}
+                         {RotInicio:}
          */
-        // RotInicio = NovoRot
-        // RotFim = NovoRot
-        this.assembly.getComandos().put("   RotInicio :   ");
+        String rotInicio = rotulo.newRot();
+        String rotFim = rotulo.newRot();
+        this.assembly.getComandos().add(rotInicio + " :");
 
         casaToken("(");
         String Expressao_aux = procedure_Expressao();
+        int Expressao_endereco = Expressao_end;
 
         /**
-         * [24] { mov ax, DS:[Expressao.end] }
-                {cmp ax, 0 
-                je RotFim}
+         * ASSEMBLY [24] {mov ax, DS:[Expressao.end] }
+                         {cmp ax, 0 
+                         je RotFim}
          */
-        this.assembly.getComandos().put("mov ax, DS:["+ "ENDEREÇO EXPRESSAO" +"]");
-        this.assembly.getComandos().put("cmp ax,0");
-        this.assembly.getComandos().put("je RotFim");
+        this.assembly.getComandos().add("mov ax, DS:["+Expressao_endereco+"]");
+        this.assembly.getComandos().add("cmp ax,0");
+        this.assembly.getComandos().add("je "+rotFim);
 
         // RULE [43] {se Expressao.tipo != tipo-lógico entao ERRO}
         if(!Expressao_aux.equals("tipo-lógico")){
@@ -1018,11 +1071,11 @@ class AnalisadorSintatico{
         procedure_Blocowhile();
 
         /**
-         * [25]  {jmp RotInicio}
-                 {RotFim:}
+         * ASSEMBLY [25]  {jmp RotInicio}
+                          {RotFim:}
          */
-        this.assembly.getComandos().put("jmp RotInicio");
-        this.assembly.getComandos().put("  RotFim:    ");
+        this.assembly.getComandos().add("jmp " + rotInicio);
+        this.assembly.getComandos().add(rotFim + " :");
     }// End procedure_Repeticao()
 
     public void procedure_Blocowhile(){
@@ -1041,16 +1094,17 @@ class AnalisadorSintatico{
         casaToken("if");
 
         // ASSEMBLY [19] {RotFalso = NovoRot} {RotFim = NovoRot}
-        //RotFalso = NovoRot
-        // RotFim = NovoRot
+        String rotFalso = rotulo.newRot();
+        String rotFim = rotulo.newRot();
 
         casaToken("(");
         String Expressao_aux = procedure_Expressao();
+        int Expressao_endereco = Expressao_end;
 
         // ASSEMBLY [20] {mov ax, DS:[Expressao.end] } {cmp ax, 0} {je RotFalso}
-        this.assembly.getComandos().put("mov ax, DS:["+"   ENDEREÇO EXPRESSAO "+"]");
-        this.assembly.getComandos().put("cmp ax,0");
-        this.assembly.getComandos().put("je [===RotFalso===]");
+        this.assembly.getComandos().add("mov ax, DS:["+Expressao_endereco+"]");
+        this.assembly.getComandos().add("cmp ax,0");
+        this.assembly.getComandos().add("je ["+rotFalso+"]");
 
         // RULE [43] {se Expressao.tipo != tipo-lógico entao ERRO}
         if(!Expressao_aux.equals("tipo-lógico")){
@@ -1059,16 +1113,16 @@ class AnalisadorSintatico{
 
         casaToken(")");
         if(this.token.equals("begin")){
-            procedure_Blocoif();
+            procedure_Blocoif(rotFalso,rotFim);
         }else{
             procedure_Comando();
             if(this.token.equals("else")){
-                procedure_Blocoelse();
+                procedure_Blocoelse(rotFalso,rotFim);
             }// End if
         }// End else
     }// End procedure_Teste()
 
-    public void procedure_Blocoif(){
+    public void procedure_Blocoif(String rotFalso,String rotFim){
         casaToken("begin");
         procedure_Comando();
         while(token.equals("id")||token.equals("while")||token.equals("if")||token.equals(";")||token.equals("readln")||token.equals("write")||token.equals("writeln")){
@@ -1078,8 +1132,8 @@ class AnalisadorSintatico{
         casaToken("else");
 
         // ASSEMBLY [21] {jmp RotFim } {RotFalso:}
-        this.assembly.getComandos.put("jmp [===RotFim===]");
-        this.assembly.getComandos.put(" RotFalso: ");
+        this.assembly.getComandos().add("jmp ["+rotFim+"]");
+        this.assembly.getComandos().add(rotFalso + " :");
 
         casaToken("begin");
         procedure_Comando();
@@ -1088,22 +1142,22 @@ class AnalisadorSintatico{
         }// End while
 
         // ASSEMBLY [22] {RotFim:}
-        this.assembly.getComandos().put("  RotFim:");
+        this.assembly.getComandos().add(rotFim + " :");
 
         casaToken("endelse");
     }// End procedure_Blocoif()
 
-    public void procedure_Blocoelse(){
+    public void procedure_Blocoelse(String rotFalso,String rotFim){
         casaToken("else");
 
         // ASSEMBLY [21] {jmp RotFim } {RotFalso:}
-        this.assembly.getComandos.put("jmp [===RotFim===]");
-        this.assembly.getComandos.put(" RotFalso: ");
+        this.assembly.getComandos().add("jmp ["+rotFim+"]");
+        this.assembly.getComandos().add(rotFalso + " :");
 
         procedure_Comando();
 
         // ASSEMBLY [22] {RotFim:}
-        this.assembly.getComandos().put("  RotFim: ");
+        this.assembly.getComandos().add(rotFim + " :");
     }// End procedure_Blocoelse()
 
     public void procedure_Nulo(){
@@ -1128,72 +1182,75 @@ class AnalisadorSintatico{
 
         // RULE [44] {se id.tipo != tipo-byte e id.tipo != tipo-inteiro e tipo.tipo != tipo-string}
         if(!id_aux.getTipo().equals("tipo-byte") && !id_aux.getTipo().equals("tipo-inteiro") && !id_aux.getTipo().equals("tipo-string")){
-            System.out.println(id_aux.getTipo());
             new Status(this.line + "\ntipos incompativeis.");
         }// End if
 
         casaToken(")");
 
-        this.assembly.getComandos().put("mov dx, ENDEREÇO DO BUFFER");
-        this.assembly.getComandos().put("mov al, 0FFh");
-        this.assembly.getComandos().put("mov ds:[ENDEREÇO DO BUFFER],al");
-        this.assembly.getComandos().put("mov ah, 0Ah");
-        this.assembly.getComandos().put("int 21h");
+        int endereco_buffer = gerenciadorMemoria.newEndString();
+        gerenciadorMemoria.contador += 3;
 
-        this.assembly.getComandos().put("mov ah,02h");
-        this.assembly.getComandos().put("mov dl,0Dh");
-        this.assembly.getComandos().put("int 21h");
-        this.assembly.getComandos().put("DL, 0Ah");
-        this.assembly.getComandos().put("int 21h");
+        this.assembly.getComandos().add("mov dx,"+endereco_buffer);
+        this.assembly.getComandos().add("mov al, 0FFh");
+        this.assembly.getComandos().add("mov DS:["+endereco_buffer+"],al");
+        this.assembly.getComandos().add("mov ah, 0Ah");
+        this.assembly.getComandos().add("int 21h");
 
-        this.assembly.getComandos().put("mov di, " + "  ENDEREÇO DO BUFFER+2  " + ";posição do string");
+        this.assembly.getComandos().add("mov ah,02h");
+        this.assembly.getComandos().add("mov dl,0Dh");
+        this.assembly.getComandos().add("int 21h");
+        this.assembly.getComandos().add("mov DL, 0Ah");
+        this.assembly.getComandos().add("int 21h");
+
+        this.assembly.getComandos().add("mov di," + endereco_buffer+2 + ";posição do string");
         if(!id_aux.getTipo().equals("tipo-string")){
-            this.assembly.getComandos().put("mov ax, 0");
-            this.assembly.getComandos().put("mov cx, 10");
-            this.assembly.getComandos().put("mov dx, 1");
-            this.assembly.getComandos().put("mov bh, 0");
-            this.assembly.getComandos().put("mov bl, ds:[di]");
-            this.assembly.getComandos().put("cmp bx, 2Dh");
-			//String rot = rotulo.novoRotulo();
-            this.assembly.getComandos().put("jne " + rot);
-            this.assembly.getComandos().put("mov dx, -1");
-            this.assembly.getComandos().put("add di, 1");
-            this.assembly.getComandos().put("mov bl, ds:[di]");
-            //this.assembly.getComandos().put("rot" + ":");
-            this.assembly.getComandos().put("push dx");
-            this.assembly.getComandos().put("mov dx, 0");
-			//String rot1 = rotulo.novoRotulo();
-            this.assembly.getComandos().put(      rot1 + ":       ");
-            this.assembly.getComandos().put("cmp bx, 0Dh");
-			//String rot2 = rotulo.novoRotulo();
-            this.assembly.getComandos().put("je " + rot2         );
-            this.assembly.getComandos().put("imul cx");
-            this.assembly.getComandos().put("add bx, -48");
-            this.assembly.getComandos().put("add ax, bx");
-            this.assembly.getComandos().put("add di, 1");
-            this.assembly.getComandos().put("mov bh, 0");
-            this.assembly.getComandos().put("mov bl, ds:[di]");
-            this.assembly.getComandos().put("jmp " + rot1);
-            this.assembly.getComandos().put(       rot2 + ":"       );
-            this.assembly.getComandos().put("pop cx");
-            this.assembly.getComandos().put("imul cx");
-            this.assembly.getComandos().put("mov DS:[" + id_aux.getEnd() + "], ax");
+            this.assembly.getComandos().add("mov ax, 0");
+            this.assembly.getComandos().add("mov cx, 10");
+            this.assembly.getComandos().add("mov dx, 1");
+            this.assembly.getComandos().add("mov bh, 0");
+            this.assembly.getComandos().add("mov bl, DS:[di]");
+            this.assembly.getComandos().add("cmp bx, 2Dh");
+			String rot = rotulo.newRot();
+            this.assembly.getComandos().add("jne " + rot);
+            this.assembly.getComandos().add("mov dx, -1");
+            this.assembly.getComandos().add("add di, 1");
+            this.assembly.getComandos().add("mov bl, DS:[di]");
+            this.assembly.getComandos().add(rot + " :");
+            this.assembly.getComandos().add("push dx");
+            this.assembly.getComandos().add("mov dx, 0");
+			String rot1 = rotulo.newRot();
+            this.assembly.getComandos().add(rot1 + " :");
+            this.assembly.getComandos().add("cmp bx, 0Dh");
+			String rot2 = rotulo.newRot();
+            this.assembly.getComandos().add("je " + rot2);
+            this.assembly.getComandos().add("imul cx");
+            this.assembly.getComandos().add("add bx, -48");
+            this.assembly.getComandos().add("add ax, bx");
+            this.assembly.getComandos().add("add di, 1");
+            this.assembly.getComandos().add("mov bh, 0");
+            this.assembly.getComandos().add("mov bl, DS:[di]");
+            this.assembly.getComandos().add("jmp " + rot1);
+            this.assembly.getComandos().add(rot2 + " :");
+            this.assembly.getComandos().add("pop cx");
+            this.assembly.getComandos().add("imul cx");
+            this.assembly.getComandos().add("mov DS:[" + id_aux.getEndereco() + "], ax");
         }else{
-            this.assembly.getComandos().put("mov si, " + tmp.getEnd());
-			//String rotString = rotulo.novoRotulo();
-            this.assembly.getComandos().put(      rotString + ":"   );
-		    this.assembly.getComandos().put("mov al, ds:[di]");	
-            this.assembly.getComandos().put("cmp al, 0dh ;verifica fim string");
-			//String rot2 = rotulo.novoRotulo();
-            this.assembly.getComandos().put("je " + rot2 + " ;salta se fim string");	
-            this.assembly.getComandos().put("mov ds:[si], al ;próximo caractere");
-            this.assembly.getComandos().put("add di, 1 ;incrementa base");
-            this.assembly.getComandos().put("add si, 1");
-            this.assembly.getComandos().put("jmp " + rotString + " ;loop");
-            this.assembly.getComandos().put(     rot2 + ":"     );
-            this.assembly.getComandos().put("mov al, 024h ;fim de string");
-            this.assembly.getComandos().put("mov ds:[si], al ;grava '$'");
+            this.assembly.getComandos().add("mov si, " + id_aux.getEndereco());
+			String rotString = rotulo.newRot();
+            this.assembly.getComandos().add(rotString + " :");
+		    this.assembly.getComandos().add("mov al, DS:[di]");	
+            this.assembly.getComandos().add("cmp al, 0dh ; verifica fim string");
+			String rot2 = rotulo.newRot();
+            this.assembly.getComandos().add("je " + rot2 + " ; salta se fim string");	
+            this.assembly.getComandos().add("mov DS:[si], al ; próximo caractere");
+            this.assembly.getComandos().add("add di, 1 ; incrementa base");
+            this.assembly.getComandos().add("add si, 1");
+            this.assembly.getComandos().add("jmp " + rotString + " ; loop");
+            this.assembly.getComandos().add(rot2 + " :");
+            this.assembly.getComandos().add("mov al, 024h ; fim de string");
+            this.assembly.getComandos().add("mov DS:[si], al ;grava $");
         }// End else
+        
         casaToken(";");
     }// End procedure_Leitura()
 
@@ -1211,11 +1268,11 @@ class AnalisadorSintatico{
             casaToken("(");
             procedure_ListaExpressoes();
 
-            this.assembly.getComandos().put("mov ah, 02h");	
-		    this.assembly.getComandos().put("mov dl, 0Dh");
-			this.assembly.getComandos().put("int 21h");	
-			this.assembly.getComandos().put("mov DL, 0Ah");	
-            this.assembly.getComandos().put("int 21h");
+            this.assembly.getComandos().add("mov ah, 02h");	
+		    this.assembly.getComandos().add("mov dl, 0Dh");
+			this.assembly.getComandos().add("int 21h");	
+			this.assembly.getComandos().add("mov DL, 0Ah");	
+            this.assembly.getComandos().add("int 21h");
             
             casaToken(")");
             casaToken(";");
@@ -1224,46 +1281,47 @@ class AnalisadorSintatico{
 
     public void procedure_ListaExpressoes(){
         String exp_tipo = procedure_Expressao();
+        int stringEnd = gerenciadorMemoria.getTemporario();
 
         if(Exp_tipo.equals("tipo_string")){
-            this.assembly.getComandos().put("mov dx, " + Exp_end);
-            this.assembly.getComandos().put("mov ah, 09h");
-            this.assembly.getComandos().put("int 21h");
+            this.assembly.getComandos().add("mov dx, " + Exp_end);
+            this.assembly.getComandos().add("mov ah, 09h");
+            this.assembly.getComandos().add("int 21h");
         }else{
-            this.assembly.getComandos().put("mov ax, DS:[" + Exp_end + "]");
-            this.assembly.getComandos().put("mov di, " + stringEnd + " ;end. string temp."); 
-            this.assembly.getComandos().put("mov cx, 0 ;contador");
-            this.assembly.getComandos().put("cmp ax,0 ;verifica sinal");
-            //String rot = rotulo.novoRotulo();
-            this.assembly.getComandos().put("jge " + rot + " ;salta se numero positivo");
-            this.assembly.getComandos().put("mov bl, 2Dh ;senao, escreve sinal ");
-            this.assembly.getComandos().put("mov ds:[di], bl");
-            this.assembly.getComandos().put("add di, 1 ;incrementa indice");
-            this.assembly.getComandos().put("neg ax ;toma modulo do numero");
-            this.assembly.getComandos().put(rot + ":");
-            this.assembly.getComandos().put("mov bx, 10 ;divisor"); 
-            //String rot1 = rotulo.novoRotulo();
-            this.assembly.getComandos().put(rot1 + ":");
-            this.assembly.getComandos().put("add cx, 1 ;incrementa contador");
-            this.assembly.getComandos().put("mov dx, 0 ;estende 32bits p/ div.");
-            this.assembly.getComandos().put("idiv bx ;divide DXAX por BX");
-            this.assembly.getComandos().put("push dx ;empilha valor do resto");  
-            this.assembly.getComandos().put("cmp ax, 0 ;verifica se quoc.  0");
-            this.assembly.getComandos().put("jne " + rot1 + " ;se nao  0, continua");              
-            //String rot2 = rotulo.novoRotulo();
-            this.assembly.getComandos().put(rot2 + ":");
-            this.assembly.getComandos().put("pop dx ;desempilha valor");
-            this.assembly.getComandos().put("add dx, 30h ;transforma em caractere");
-            this.assembly.getComandos().put("mov ds:[di],dl ;escreve caractere");
-            this.assembly.getComandos().put("add di, 1 ;incrementa base");
-            this.assembly.getComandos().put("add cx, -1 ;decrementa contador");
-            this.assembly.getComandos().put("cmp cx, 0 ;verifica pilha vazia");
-            this.assembly.getComandos().put("jne " + rot2 + " ;se nao pilha vazia, loop");
-            this.assembly.getComandos().put("mov dl, 024h ;fim de string");
-            this.assembly.getComandos().put("mov ds:[di], dl ;grava '$'");
-            this.assembly.getComandos().put("mov dx, " + stringEnd);
-            this.assembly.getComandos().put("mov ah, 09h");
-            this.assembly.getComandos().put("int 21h");
+            this.assembly.getComandos().add("mov ax, DS:[" + Exp_end + "]");
+            this.assembly.getComandos().add("mov di, " + stringEnd + " ; end. string temp."); 
+            this.assembly.getComandos().add("mov cx, 0 ;contador");
+            this.assembly.getComandos().add("cmp ax,0 ;verifica sinal");
+            String rot = rotulo.newRot();
+            this.assembly.getComandos().add("jge " + rot + " ;salta se numero positivo");
+            this.assembly.getComandos().add("mov bl, 2Dh ;senao, escreve sinal ");
+            this.assembly.getComandos().add("mov DS:[di], bl");
+            this.assembly.getComandos().add("add di, 1 ;incrementa indice");
+            this.assembly.getComandos().add("neg ax ;toma modulo do numero");
+            this.assembly.getComandos().add(rot + ":");
+            this.assembly.getComandos().add("mov bx, 10 ;divisor"); 
+            String rot1 = rotulo.newRot();
+            this.assembly.getComandos().add(rot1 + ":");
+            this.assembly.getComandos().add("add cx, 1 ;incrementa contador");
+            this.assembly.getComandos().add("mov dx, 0 ;estende 32bits p/ div.");
+            this.assembly.getComandos().add("idiv bx ;divide DXAX por BX");
+            this.assembly.getComandos().add("push dx ;empilha valor do resto");  
+            this.assembly.getComandos().add("cmp ax, 0 ;verifica se quoc.  0");
+            this.assembly.getComandos().add("jne " + rot1 + " ;se nao  0, continua");              
+            String rot2 = rotulo.newRot();
+            this.assembly.getComandos().add(rot2 + ":");
+            this.assembly.getComandos().add("pop dx ;desempilha valor");
+            this.assembly.getComandos().add("add dx, 30h ;transforma em caractere");
+            this.assembly.getComandos().add("mov DS:[di],dl ;escreve caractere");
+            this.assembly.getComandos().add("add di, 1 ;incrementa base");
+            this.assembly.getComandos().add("add cx, -1 ;decrementa contador");
+            this.assembly.getComandos().add("cmp cx, 0 ;verifica pilha vazia");
+            this.assembly.getComandos().add("jne " + rot2 + " ;se nao pilha vazia, loop");
+            this.assembly.getComandos().add("mov dl, 024h ;fim de string");
+            this.assembly.getComandos().add("mov DS:[di], dl ;grava '$'");
+            this.assembly.getComandos().add("mov dx, " + stringEnd);
+            this.assembly.getComandos().add("mov ah, 09h");
+            this.assembly.getComandos().add("int 21h");
         }// End else
 
         // RULE [45] {se Expressao.tipo != tipo-inteiro e Expressao.tipo != tipo-byte e Expressao.tipo != tipo-string}
@@ -1277,44 +1335,44 @@ class AnalisadorSintatico{
             exp_tipo = procedure_Expressao();
 
             if(Exp_tipo.equals("tipo_string")){
-                this.assembly.getComandos().put("mov dx, " + Exp_end);
-                this.assembly.getComandos().put("mov ah, 09h");
-                this.assembly.getComandos().put("int 21h");
+                this.assembly.getComandos().add("mov dx, " + Exp_end);
+                this.assembly.getComandos().add("mov ah, 09h");
+                this.assembly.getComandos().add("int 21h");
             }else{
-                this.assembly.getComandos().put("mov ax, DS:[" + Exp_end + "]");
-                this.assembly.getComandos().put("mov di, " + stringEnd + " ;end. string temp."); 
-                this.assembly.getComandos().put("mov cx, 0 ;contador");
-                this.assembly.getComandos().put("cmp ax,0 ;verifica sinal");
-                //String rot = rotulo.novoRotulo();
-                this.assembly.getComandos().put("jge " + rot + " ;salta se numero positivo");
-                this.assembly.getComandos().put("mov bl, 2Dh ;senao, escreve sinal ");
-                this.assembly.getComandos().put("mov ds:[di], bl");
-                this.assembly.getComandos().put("add di, 1 ;incrementa indice");
-                this.assembly.getComandos().put("neg ax ;toma modulo do numero");
-                this.assembly.getComandos().put(rot + ":");
-                this.assembly.getComandos().put("mov bx, 10 ;divisor"); 
-                //String rot1 = rotulo.novoRotulo();
-                this.assembly.getComandos().put(rot1 + ":");
-                this.assembly.getComandos().put("add cx, 1 ;incrementa contador");
-                this.assembly.getComandos().put("mov dx, 0 ;estende 32bits p/ div.");
-                this.assembly.getComandos().put("idiv bx ;divide DXAX por BX");
-                this.assembly.getComandos().put("push dx ;empilha valor do resto");  
-                this.assembly.getComandos().put("cmp ax, 0 ;verifica se quoc.  0");
-                this.assembly.getComandos().put("jne " + rot1 + " ;se nao  0, continua");              
-                //String rot2 = rotulo.novoRotulo();
-                this.assembly.getComandos().put(rot2 + ":");
-                this.assembly.getComandos().put("pop dx ;desempilha valor");
-                this.assembly.getComandos().put("add dx, 30h ;transforma em caractere");
-                this.assembly.getComandos().put("mov ds:[di],dl ;escreve caractere");
-                this.assembly.getComandos().put("add di, 1 ;incrementa base");
-                this.assembly.getComandos().put("add cx, -1 ;decrementa contador");
-                this.assembly.getComandos().put("cmp cx, 0 ;verifica pilha vazia");
-                this.assembly.getComandos().put("jne " + rot2 + " ;se nao pilha vazia, loop");
-                this.assembly.getComandos().put("mov dl, 024h ;fim de string");
-                this.assembly.getComandos().put("mov ds:[di], dl ;grava '$'");
-                this.assembly.getComandos().put("mov dx, " + stringEnd);
-                this.assembly.getComandos().put("mov ah, 09h");
-                this.assembly.getComandos().put("int 21h");
+                this.assembly.getComandos().add("mov ax, DS:[" + Exp_end + "]");
+                this.assembly.getComandos().add("mov di, " + stringEnd + " ;end. string temp."); 
+                this.assembly.getComandos().add("mov cx, 0 ;contador");
+                this.assembly.getComandos().add("cmp ax,0 ;verifica sinal");
+                String rot = rotulo.newRot();
+                this.assembly.getComandos().add("jge " + rot + " ;salta se numero positivo");
+                this.assembly.getComandos().add("mov bl, 2Dh ;senao, escreve sinal ");
+                this.assembly.getComandos().add("mov DS:[di], bl");
+                this.assembly.getComandos().add("add di, 1 ;incrementa indice");
+                this.assembly.getComandos().add("neg ax ;toma modulo do numero");
+                this.assembly.getComandos().add(rot + ":");
+                this.assembly.getComandos().add("mov bx, 10 ;divisor"); 
+                String rot1 = rotulo.newRot();
+                this.assembly.getComandos().add(rot1 + ":");
+                this.assembly.getComandos().add("add cx, 1 ;incrementa contador");
+                this.assembly.getComandos().add("mov dx, 0 ;estende 32bits p/ div.");
+                this.assembly.getComandos().add("idiv bx ;divide DXAX por BX");
+                this.assembly.getComandos().add("push dx ;empilha valor do resto");  
+                this.assembly.getComandos().add("cmp ax, 0 ;verifica se quoc.  0");
+                this.assembly.getComandos().add("jne " + rot1 + " ;se nao  0, continua");              
+                String rot2 = rotulo.newRot();
+                this.assembly.getComandos().add(rot2 + ":");
+                this.assembly.getComandos().add("pop dx ;desempilha valor");
+                this.assembly.getComandos().add("add dx, 30h ;transforma em caractere");
+                this.assembly.getComandos().add("mov DS:[di],dl ;escreve caractere");
+                this.assembly.getComandos().add("add di, 1 ;incrementa base");
+                this.assembly.getComandos().add("add cx, -1 ;decrementa contador");
+                this.assembly.getComandos().add("cmp cx, 0 ;verifica pilha vazia");
+                this.assembly.getComandos().add("jne " + rot2 + " ;se nao pilha vazia, loop");
+                this.assembly.getComandos().add("mov dl, 024h ;fim de string");
+                this.assembly.getComandos().add("mov DS:[di], dl ;grava '$'");
+                this.assembly.getComandos().add("mov dx, " + stringEnd);
+                this.assembly.getComandos().add("mov ah, 09h");
+                this.assembly.getComandos().add("int 21h");
             }// End else
 
             // RULE [45] {se Expressao.tipo != tipo-inteiro e Expressao.tipo != tipo-byte e Expressao.tipo != tipo-string}
@@ -1327,9 +1385,10 @@ class AnalisadorSintatico{
     public String procedure_Expressao(){
         // RULE [23] {Expressao.tipo = Exp.tipo}
         Expressao_tipo = procedure_Exp();
+        byte Exp1_end = Exp_end;
          
-        // ASSEMBLY {Expressao.end = Exp1.end}
-        Expressao_end = // Exp1 ENDEREÇO
+        // ASSEMBLY [16] {Expressao.end = Exp1.end}
+        Expressao_end = Exp1_end;
 
         if(this.token.equals("=") || this.token.equals("!=") || this.token.equals("<") || this.token.equals(">") || this.token.equals("<=") || this.token.equals(">=")){
             Expressao_tipo = procedure_E(Expressao_tipo);
@@ -1349,7 +1408,7 @@ class AnalisadorSintatico{
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
 
-            // ASSEMBLY [17.1] {Expressao.op =  “=”}
+            // ASSEMBLY [17.1] {Expressao.op =  =}
             Expressao_op = "=";
 
             casaToken("=");
@@ -1359,7 +1418,7 @@ class AnalisadorSintatico{
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
 
-            // ASSEMBLY [17.2] {Expressao.op =  “!=”}
+            // ASSEMBLY [17.2] {Expressao.op =  !=}
             Expressao_op = "!=";
 
             casaToken("!=");
@@ -1369,7 +1428,7 @@ class AnalisadorSintatico{
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
 
-            // ASSEMBLY [17.3] {Expressao.op =  “<”}
+            // ASSEMBLY [17.3] {Expressao.op =  <}
             Expressao_op = "<";
 
             casaToken("<"); 
@@ -1379,7 +1438,7 @@ class AnalisadorSintatico{
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
 
-            // ASSEMBLY [17.4] {Expressao.op =  “>”}
+            // ASSEMBLY [17.4] {Expressao.op =  >}
             Expressao_op = ">";
 
             casaToken(">");
@@ -1389,7 +1448,7 @@ class AnalisadorSintatico{
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
 
-            // ASSEMBLY [17.5] {Expressao.op =  “<=”}
+            // ASSEMBLY [17.5] {Expressao.op =  <=}
             Expressao_op = "<=";
 
             casaToken("<=");
@@ -1399,13 +1458,14 @@ class AnalisadorSintatico{
                 new Status(this.line + "\ntipos incompativeis.");
             }// End if
 
-            // ASSEMBLY [17.6] {Expressao.op =  “>=”}
+            // ASSEMBLY [17.6] {Expressao.op =  >=}
             Expressao_op = ">=";
 
             casaToken(">=");
         }// End else if
         String Exp2_tipo = procedure_Exp();
-
+        int Exp2_end = Exp_end;
+        
         /**
          * RULE [36] {se Expressao.tipo != Exp2.tipo e (Expressao.tipo !=
          * tipo-inteiro e Exp2.tipo != tipo-byte e Expressao.tipo != tipo-byte 
@@ -1421,7 +1481,7 @@ class AnalisadorSintatico{
          Expressao_tipo = "tipo-lógico";
 
          /**
-          * [18]  { mov ax, DS:[Expressao.end]}
+          * ASSEMBLY [18]  { mov ax, DS:[Expressao.end]}
                     mov bx, DS:{Exp2.end]
                     cwd
                     mov cx, DS:[ax]
@@ -1431,15 +1491,15 @@ class AnalisadorSintatico{
                     mov DS:[ax],cx}
                     {cmp ax, bx}
                     { RotVerdadeiro = NovoRot }
-                    { se Exp.op = “=” então
+                    { se Exp.op = = então
                         je RotVerdadeiro
-                    senao se Exp.op = “!=” então
+                    senao se Exp.op = != então
                         jne RotVerdadeiro
-                    senao se Exp.op = “<” então
+                    senao se Exp.op = < então
                         jl RotVerdadeiro
-                    senao se Exp.op = “>” então
+                    senao se Exp.op = > então
                         jg RotVerdadeiro
-                    senao se Exp.op = “>=” então
+                    senao se Exp.op = >= então
                         jge RotVerdadeiro
                     senao
                         jle RotVerdadeiro }
@@ -1453,37 +1513,38 @@ class AnalisadorSintatico{
                     { Exp.tipo:=tipo-lógico }
                     { mov Exp.end, AL }
           */
-          this.assembly.getComandos().put("mov ax, DS:[      Expressao.end      ]");
-          this.assembly.getComandos().put("mov bx, DS:{       Exp2.end      ]");
-          this.assembly.getComandos().put("cwd");
-          this.assembly.getComandos().put("mov DS:[bx],ax");
-          this.assembly.getComandos().put("mov DS:[ax],cx");
+          this.assembly.getComandos().add("mov ax, DS:["+Expressao_end+"]");
+          this.assembly.getComandos().add("mov bx, DS:["+Exp2_end+"]");
+          this.assembly.getComandos().add("cwd");
+          this.assembly.getComandos().add("mov bx,ax");
+          this.assembly.getComandos().add("mov ax,cx");
 
-          this.assembly.getComandos().put("cmp ax, bx");
-          // RotVerdadeiro = NovoRot
+          this.assembly.getComandos().add("cmp ax, bx");
+          String rotuloVerdadeiro = rotulo.newRot();
 
-          if(Exp_op.equals("=")){
-            this.assembly.getComandos().put("je RotVerdadeiro");
-          }else if(Exp_op.equals("!=")){    
-            this.assembly.getComandos().put("jne RotVerdadeiro");
-          }else if(Exp_op.equals("<")){
-            this.assembly.getComandos().put("jl RotVerdadeiro");
-          }else if(Exp_op.equals(">")){
-            this.assembly.getComandos().put("jg RotVerdadeiro");
-          }else if(Exp_op.equals(">=")){
-            this.assembly.getComandos().put("jge RotVerdadeiro");
+          if(Expressao_op.equals("=")){
+            this.assembly.getComandos().add("je " + rotuloVerdadeiro);
+          }else if(Expressao_op.equals("!=")){    
+            this.assembly.getComandos().add("jne " + rotuloVerdadeiro);
+          }else if(Expressao_op.equals("<")){
+            this.assembly.getComandos().add("jl " + rotuloVerdadeiro);
+          }else if(Expressao_op.equals(">")){
+            this.assembly.getComandos().add("jg " + rotuloVerdadeiro);
+          }else if(Expressao_op.equals(">=")){
+            this.assembly.getComandos().add("jge " + rotuloVerdadeiro);
           }else{
-            this.assembly.getComandos().put("jle RotVerdadeiro");
+            this.assembly.getComandos().add("jle " + rotuloVerdadeiro);
           }// End else
-          this.assembly.getComandos().put("mov al, 0");
-          // RotFim = NovoRot
-          this.assembly.getComandos().put("jmp           RotFim");
-          this.assembly.getComandos().put("RotVerdadeiro          :");
-          this.assembly.getComandos().put("mov al, 0FFh");
-          this.assembly.getComandos().put("RotFim     :");
-          Expressao_end = //NovoTemp
+          this.assembly.getComandos().add("mov al, 0");
+          String rotFim = rotulo.newRot();
+          this.assembly.getComandos().add("jmp " + rotFim);
+          this.assembly.getComandos().add(rotuloVerdadeiro + " :");
+          this.assembly.getComandos().add("mov al, 0FFh");
+          this.assembly.getComandos().add(rotFim + " :");
+          Expressao_end = gerenciadorMemoria.getTemporario();
           Expressao_tipo = "tipo-lógico";
-          this.assembly.getComandos().put("mov "+Expressao_end+",al");
+          this.assembly.getComandos().add("mov DS:["+Expressao_end+"],al");
+
           return Expressao_tipo;
     }// End procedure_E()
 
@@ -1499,9 +1560,10 @@ class AnalisadorSintatico{
 
         // RULE [24] {Exp.tipo = T.tipo}
         Exp_tipo = procedure_T();
+        byte T1_end = T_end;
 
         /**
-         * [13] {se Exp.negado = true
+         * ASSEMBLY [13] {se Exp.negado = true
           	     Exp.end = NovoTemp
      	         mov ax, DS:[T1.end]
           	     neg ax
@@ -1509,12 +1571,12 @@ class AnalisadorSintatico{
                  {Exp.end = T1.end}
          */
         if(expnegado){
-            // Exp.endereço = NovoTemp
-            this.assembly.getComandos().put("mov ax, DS:["+"T1 ENDEREÇO"+"]");
-            this.assembly.getComandos().put("neg ax");
-            this.assembly.getComandos().put("mov DS:["+"Exp ENDEREÇO"+"]");
+            Exp_end = gerenciadorMemoria.getTemporario();
+            this.assembly.getComandos().add("mov ax, DS:["+T1_end+"]");
+            this.assembly.getComandos().add("neg ax");
+            this.assembly.getComandos().add("mov DS:["+Exp_end+"],ax");
         }// Endif
-        Exp_end = //T1 ENDEREÇO
+        Exp_end = T1_end;
 
         while(this.token.equals("+") || this.token.equals("-") || this.token.equals("||")){
             Exp_tipo = procedure_D(Exp_tipo);
@@ -1562,6 +1624,7 @@ class AnalisadorSintatico{
             casaToken("||");
         }// End else if
         String T2_tipo = procedure_T();
+        int T2_exp = T_end;
 
         /**
          * RULE [37] {se Exp.tipo != T2.tipo e (Exp.tipo != tipo-inteiro e T2.tipo != 
@@ -1592,37 +1655,38 @@ class AnalisadorSintatico{
                             cwd 
                             mov DS:[bx], ax
                             mov DS:[ax], cx}
-                            se Exp.op = “+” então
+                            se Exp.op = + então
                             add
-                            senao se Exp.op = “-” então
+                            senao se Exp.op = - então
                             sub
                             senao 
                             and          
                             Exp.end = NovoTemp
                             mov DS:[Exp.end], ax 
            */
-           this.assembly.getComandos().put("mov ax, DS:["+"ENDEREÇO DE Exp"+"]");
-           this.assembly.getComandos().put("mov bx, DS:["+"ENDEREÇO DE T2"+"]");
+           this.assembly.getComandos().add("mov ax, DS:["+Exp_end+"]");
+           this.assembly.getComandos().add("mov bx, DS:["+T2_exp+"]");
            if(!Exp_tipo.equals("tipo-inteiro")){
-                this.assembly.getComandos().put("cwd");
+                this.assembly.getComandos().add("cwd");
            }// End if
            if(!T2_tipo.equals("tipo-inteiro")){
-                this.assembly.getComandos().put("mov cx, DS:[ax]");
-                this.assembly.getComandos().put("mov ax, DS:[bx]");
-                this.assembly.getComandos().put("cwd");
-                this.assembly.getComandos().put("mov DS:[bx], ax");
-                this.assembly.getComandos().put("mov DS:[ax], cx");
+                this.assembly.getComandos().add("mov cx,ax");
+                this.assembly.getComandos().add("mov ax,bx");
+                this.assembly.getComandos().add("cwd");
+                this.assembly.getComandos().add("mov bx, ax");
+                this.assembly.getComandos().add("mov ax, cx");
            }// End if
            if(Exp_op.equals("+")){
-                this.assembly.getComandos().put("add ax,bx");
+                this.assembly.getComandos().add("add ax,bx");
            }else if(Exp_op.equals("-")){
-                this.assembly.getComandos().put("sub ax,bx");
+                this.assembly.getComandos().add("sub ax,bx");
            }else{
-                this.assembly.getComandos().put("");
+                this.assembly.getComandos().add("or ax,bx");
            }// End else
-          return Exp_tipo;
-          Exp_end = //NovoTemp
-          this.assembly.getComandos().put("mov DS:["+Exp_end+"],ax");
+           Exp_end = gerenciadorMemoria.getTemporario();
+           this.assembly.getComandos().add("mov DS:["+Exp_end+"],ax");
+
+           return Exp_tipo;
     }// End procedure_D()
 
     public String procedure_T(){
@@ -1631,7 +1695,7 @@ class AnalisadorSintatico{
         T_tipo = procedure_F();
 
         // ASSEMBLY [9] {T.end = F1.end}
-        T_end = // ENDEREÇO DE F1 
+        T_end = F_end; 
         
         while(this.token.equals("*") || this.token.equals("&&") || this.token.equals("/")){
             T_tipo = procedure_precedenciaC(T_tipo);
@@ -1686,6 +1750,7 @@ class AnalisadorSintatico{
         }// End else if
 
         String F2_aux = procedure_F();
+        int F2_end = F_end;
 
         /**
          * [38] {se T.tipo != F2.tipo e (T.tipo != tipo-inteiro e F2.tipo != 
@@ -1707,7 +1772,7 @@ class AnalisadorSintatico{
          }// End if
 
           /**
-           * [15] {mov ax, DS:[T.end]}
+           * ASSEMBLY [11] {mov ax, DS:[T.end]}
                   {mov bx, DS:[F2.end]}
                   {se T.tipo != tipo-inteiro entao
 	               cwd 
@@ -1717,36 +1782,38 @@ class AnalisadorSintatico{
 	               cwd 
 	               mov DS:[bx], ax
 	               mov DS:[ax], cx}
-                   se T.op = “*” então
+                   se T.op = * então
 		           add
-                   senao se T.op = “&&” então
+                   senao se T.op = && então
 	               sub
                    senao 
 	               and          
                    Exps.end = NovoTemp
-                   mov DS:[Exps.end], ax 
+                   mov DS:[T.end], ax 
            */
-          this.assembly.getComandos().put("mov ax, DS:["+"ENDEREÇO T"+"]");
-          this.assembly.getComandos().put("mox bx, DS:["+ "ENDEREÇO DE F2" +"]");
+          this.assembly.getComandos().add("mov ax, DS:["+T_end+"]");
+          this.assembly.getComandos().add("mox bx, DS:["+ F2_end +"]");
           if(!T_tipo.equals("tipo-inteiro")){
-              this.assembly.getComandos().put("cwd");
+              this.assembly.getComandos().add("cwd");
           }// Endif
           if(F2_aux.equals("tipo-inteiro")){
-            this.assembly.getComandos().put("mov cx, DS:[ax]");
-            this.assembly.getComandos().put("mov ax, DS:[bx]");
-            this.assembly.getComandos().put("cwd");
-            this.assembly.getComandos().put("mov DS:[bx],ax");
-            this.assembly.getComandos().put("mov DS:[ax],cx");
+            this.assembly.getComandos().add("mov cx,ax");
+            this.assembly.getComandos().add("mov ax,bx");
+            this.assembly.getComandos().add("cwd");
+            this.assembly.getComandos().add("mov bx,ax");
+            this.assembly.getComandos().add("mov ax,cx");
           }// End if
+
           if(T_op.equals("*")){
-            this.assembly.getComandos().put("imul bx");
+            this.assembly.getComandos().add("imul bx");
           }else if(T_op.equals("&&")){ 
-            this.assembly.getComandos().put("");
+            this.assembly.getComandos().add("and ax,bx ; conjuncao");
           }else{
-            this.assembly.getComandos().put("idiv bx");
+            this.assembly.getComandos().add("idiv bx");
+            this.assembly.getComandos().add("sub ax, 256");
           }// End else
-          // Exps.end = NovoTemp
-          // mov DS:[Exps.end], ax 
+          T_end = gerenciadorMemoria.getTemporario();
+          this.assembly.getComandos().add("mov DS:["+T_end+"],ax"); 
 
          return T_tipo;
     }// End procedure_precedenciaC()
@@ -1757,6 +1824,7 @@ class AnalisadorSintatico{
 
             // RULE [26] {F.tipo = F1.tipo}
             F_tipo = procedure_F();
+            int F1_end = F_end;
 
             /**
              * [8] {F.end = NovoTemp
@@ -1765,11 +1833,11 @@ class AnalisadorSintatico{
              *      add regA, 1
              *      mov F.end, regA}
              */
-             F_end = //NovoTemp
-             this.assembly.getComandos().put("mov ax, ENDEREÇO F1");
-             this.assembly.getComandos().put("neg ax");
-             this.assembly.getComandos().put("add ax,1");
-             this.assembly.getComandos().put("mov ENDEREÇO F,ax");
+             F_end = gerenciadorMemoria.getTemporario();
+             this.assembly.getComandos().add("mov ax,"+F1_end);
+             this.assembly.getComandos().add("neg ax");
+             this.assembly.getComandos().add("add ax,1");
+             this.assembly.getComandos().add("mov "+ F_end +",ax");
         }else if(this.token.equals("(")){
             casaToken("(");
 
@@ -1777,7 +1845,7 @@ class AnalisadorSintatico{
             F_tipo = procedure_Expressao();
             
             // ASSEMBLY [7] {F.end = Expressao.end}
-            F_end = //ENDEREÇO EXPRESSAO
+            F_end = Expressao_end;
 
             casaToken(")");
         }else if(this.token.equals("id")){
@@ -1801,6 +1869,7 @@ class AnalisadorSintatico{
             this.F_isnegativo = true;
 
             casaToken("-");
+            
             Symbol const_aux = this.symbol;
             casaToken("const");
 
@@ -1824,9 +1893,9 @@ class AnalisadorSintatico{
            F_tipo = const_aux.getTipo();
 
            /**
-            * [6] {se const.tipo = tipo-string entao 
+            * ASSEMBLY [6] {se const.tipo = tipo-string entao 
 	        *          dseg SEGMENT PUBLIC
-	        *          byte “const.lexema$”
+	        *          byte const.lexema$
 	        *          dseg ENDS
 	        *          F.end = contator_dados
             *          contator_dados += 256
@@ -1836,21 +1905,32 @@ class AnalisadorSintatico{
 		    *          mov F.end, regA}
             */
             if(const_aux.getTipo().equals("tipo-string")){
-                this.assembly.getComandos().put("dseg SEGMENT PUBLIC ; inicio da segmentacao");
+                this.assembly.getComandos().add("dseg SEGMENT PUBLIC ; inicio da segmentacao");
                 String constant = const_aux.getLexema().replace("\"","");
-                this.assembly.getComandos().put("byte "+constant+"$ ; declaração string");
-                this.assembly.getComandos().put("dseg ENDS");
-                //F.end = contator_dados
-                //contator_dados += 256
+                this.assembly.getComandos().add("byte "+constant+"$ ; declaracao string");
+                this.assembly.getComandos().add("dseg ENDS");
+                F_end = gerenciadorMemoria.contador;
+                gerenciadorMemoria.newEndString(constant.length());
             }else{
-                // F.end = NovoTemp
-                this.assembly.getComandos().put("mov ax,"+const_aux.getLexema()+" ; constante "+const_aux.getLexema());
-                this.assembly.getComandos().put("mov ENDEREÇO DE F,ax");
+                F_end = gerenciadorMemoria.getTemporario();
+                this.assembly.getComandos().add("mov ax,"+const_aux.getLexema()+" ; constante "+const_aux.getLexema());
+                this.assembly.getComandos().add("mov "+F_end+",ax");
+
+                if(const_aux.getTipo().equals("tipo-string")){
+                    gerenciadorMemoria.newEndString();
+                }else if(const_aux.getTipo().equals("tipo-inteiro")){
+                    gerenciadorMemoria.newEndInt();
+                }else if(const_aux.getTipo().equals("tipo-byte")){
+                    gerenciadorMemoria.newEndByte();
+                }else{
+                    gerenciadorMemoria.newEndBoolean();
+                }// End else
             }// End else
 
         }else{
 
             Symbol const_aux = this.symbol;
+            casaToken("const");
 
             /**
              * RULE [21] {se const.tipo != tipo-string e const.tipo != tipo-lógico e 
@@ -1870,14 +1950,107 @@ class AnalisadorSintatico{
 
            // RULE [28] {F.tipo = const.tipo}
            F_tipo = const_aux.getTipo();
-
-            casaToken("const");
         }// End else if
         return F_tipo;
     }// End procedure_F()
 }// End AnalisadorSintatico()
 
-public class Assembly{
+class GerenciadorMemoria{
+    public byte contador;
+    public byte contador_temporario;
+
+    public GerenciadorMemoria(){
+        contador = 0;
+        contador_temporario = 0;
+    }// End GerenciadorMemoria()
+
+    public void zerarTemporario(){
+        contador_temporario = 0;
+    }// End zerarTemporario()
+
+    public byte newEndTemp(){
+        byte temporario = contador;
+        contador++;
+        return temporario;
+    }// End newEndTemp()
+
+    public byte newEndBoolean(){
+		byte temporario = contador;
+		contador++;
+		return temporario;
+    }// End newEndBoolean()
+
+    public byte newEndByte(){
+		byte temporario = contador;
+		contador++;
+		return temporario;
+	}// End newEndByte()
+    
+    public byte newEndInt(){
+        byte temporario = contador;
+        contador += 2;
+        return temporario;
+    }//End newEndInt()
+
+    public byte getTemporario(){
+        return contador_temporario;
+    }// End getTemporario()
+
+    public byte newEndString(){
+        byte temporario = contador;
+        contador += 256;
+        return temporario;
+    }// End newEndString()
+
+    public byte newEndString(int tam){
+		byte temporario = contador;
+		contador += tam;
+		return temporario;
+    }// End newEndString()
+    
+    public byte newByteTemporario(){
+        byte temporario = contador_temporario;
+        contador_temporario++;
+        return temporario;
+    }// End newByteTemporario()
+
+    public byte newStringTemporario(){
+        byte temporario = contador_temporario;
+        contador_temporario += 256;
+        return temporario;
+    }// End newStringTemporario()
+
+    public byte newLogicoTemporario(){
+        byte temporario = contador_temporario;
+        contador_temporario++;
+        return temporario;
+    }// End newLogicoTemporario()
+
+    public byte newIntTemporario(){
+        byte temporario = contador_temporario;
+        contador_temporario += 2;
+        return temporario;
+    }// End newIntTemporario()
+}// End GerenciadorMemoria
+
+
+class Rotulo{
+    static int contator;
+
+    public Rotulo(){
+        contator = 0;
+    }// End Rotulo()
+
+    public void zerarRotulo(){
+        contator = 0;
+    }// End zerarRotulo()
+
+    public String newRot(){
+        return "R" + contator++;
+    }// End newRot()
+}// End classRotulo
+
+class Assembly{
     private ArrayList<String> declaracao; 
     private ArrayList<String> comandos;
     private BufferedWriter bufferedWriter;
@@ -1887,14 +2060,37 @@ public class Assembly{
     public ArrayList<String> getComandos(){ return this.comandos;}// End getComandos()
     public void setComandos(ArrayList<String> comandos){ this.comandos = comandos;}// End setComandos()
 
-    public Assembly(){
-        this.bufferedWriter = new BufferedWriter("c:/8086/codigo.asm"); 
+    public Assembly() throws IOException{
+        this.bufferedWriter = new BufferedWriter(new FileWriter("c:/8086/codigo.asm")); 
         this.declaracao = new ArrayList<>(0);
         this.comandos = new ArrayList<>(0);
     }// End Assembly()
 
-    public void getAssembly(){
+    public void getAssembly() throws IOException{
+        List<String> allcode = new ArrayList<String>(0);
 
+        allcode.add("sseg SEGMENT STACK ;inicia segmento pilha");
+        allcode.add("byte 4000h DUP(?) ;dimensiona pilha");
+        allcode.add("sseg ENDS ;fim seg. pilha");
+        allcode.add("dseg SEGMENT PUBLIC ;inicio seg. dados");
+        allcode.add("byte 4000h DUP(?) ;dimensiona pilha");
+        allcode.addAll(declaracao);
+        allcode.add("dseg ENDS ;fim seg. dados");
+        allcode.add("cseg SEGMENT PUBLIC ;início seg. código");
+        allcode.add("ASSUME CS:cseg, DS:dseg");
+        allcode.add("strt:");
+        allcode.add("mov AX, dseg");
+        allcode.add("mov ds, AX");
+        allcode.addAll(comandos);
+        allcode.add("mov ah, 4Ch");
+        allcode.add("int 21h");
+        allcode.add("cseg ENDS ;fim seg. codigo");
+        allcode.add("END strt ;fim programa");
+
+        for(String asembly_code : allcode){
+            this.bufferedWriter.write(asembly_code + "\n");
+        }// End for
+        this.bufferedWriter.close();
     }// End getAssembly()
 }// End class Assembly
 
